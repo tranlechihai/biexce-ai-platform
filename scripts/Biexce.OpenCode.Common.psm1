@@ -147,6 +147,8 @@ function Invoke-BiexceOpenCode {
         "OPENCODE_CONFIG_CONTENT",
         "OPENCODE_CONFIG_DIR",
         "OPENCODE_DISABLE_PROJECT_CONFIG",
+        "OPENCODE_DISABLE_EXTERNAL_SKILLS",
+        "OPENCODE_DISABLE_CLAUDE_CODE_SKILLS",
         "XDG_CONFIG_HOME"
     )
     $previousEnvironment = @{}
@@ -175,6 +177,16 @@ function Invoke-BiexceOpenCode {
         )
         [Environment]::SetEnvironmentVariable(
             "OPENCODE_DISABLE_PROJECT_CONFIG",
+            "1",
+            "Process"
+        )
+        [Environment]::SetEnvironmentVariable(
+            "OPENCODE_DISABLE_EXTERNAL_SKILLS",
+            "1",
+            "Process"
+        )
+        [Environment]::SetEnvironmentVariable(
+            "OPENCODE_DISABLE_CLAUDE_CODE_SKILLS",
             "1",
             "Process"
         )

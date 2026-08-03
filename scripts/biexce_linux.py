@@ -586,6 +586,8 @@ def run_opencode(prefix, target, arguments):
     environment.pop("OPENCODE_CONFIG_CONTENT", None)
     environment["OPENCODE_CONFIG_DIR"] = str(target)
     environment["OPENCODE_DISABLE_PROJECT_CONFIG"] = "1"
+    environment["OPENCODE_DISABLE_EXTERNAL_SKILLS"] = "1"
+    environment["OPENCODE_DISABLE_CLAUDE_CODE_SKILLS"] = "1"
     environment["XDG_CONFIG_HOME"] = str(target.parent)
     result = subprocess.run(
         prefix + list(arguments),
