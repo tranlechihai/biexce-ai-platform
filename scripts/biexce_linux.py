@@ -589,22 +589,32 @@ def run_opencode(prefix, target, arguments):
     environment["OPENCODE_DISABLE_EXTERNAL_SKILLS"] = "1"
     environment["OPENCODE_DISABLE_CLAUDE_CODE_SKILLS"] = "1"
     environment["XDG_CONFIG_HOME"] = str(target.parent)
-    result = subprocess.run(
-        prefix + list(arguments),
-        cwd=tempfile.gettempdir(),
-        env=environment,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
+
+    # OpenCode can emit more than the Unix pipe buffer for debug skill JSON.
+    # Regular temporary files prevent truncated UTF-8 and are removed on close.
+    with (
+        tempfile.TemporaryFile() as stdout_file,
+        tempfile.TemporaryFile() as stderr_file,
+    ):
+        result = subprocess.run(
+            prefix + list(arguments),
+            cwd=tempfile.gettempdir(),
+            env=environment,
+            stdout=stdout_file,
+            stderr=stderr_file,
+            check=False,
+        )
+        stdout_file.seek(0)
+        stderr_file.seek(0)
+        stdout_text = stdout_file.read().decode("utf-8", errors="replace")
+        stderr_text = stderr_file.read().decode("utf-8", errors="replace")
+
     if result.returncode != 0:
-        message = (result.stderr or result.stdout).strip()
+        message = (stderr_text or stdout_text).strip()
         raise RuntimeError(
             f"OpenCode command failed with exit code {result.returncode}: {message}"
         )
-    return (result.stdout + "\n" + result.stderr).strip()
+    return (stdout_text + "\n" + stderr_text).strip()
 
 
 def parse_opencode_version(output):
