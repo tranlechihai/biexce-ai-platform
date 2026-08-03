@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/control-plane/model-routing-applied-v1.schema.json",
+  "title": "BIEXCE Applied Model Routing v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "source_path", "source_sha256", "applied_at_utc", "applied_by", "routing"],
+  "properties": {
+    "$schema": {"const": "https://schemas.biexce.local/control-plane/model-routing-applied-v1.schema.json"},
+    "schema_version": {"const": 1},
+    "source_path": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "applied_at_utc": {"type": "string", "format": "date-time"},
+    "applied_by": {"type": "string", "minLength": 1},
+    "routing": {"$ref": "model-routing-v1.schema.json"}
+  }
+}

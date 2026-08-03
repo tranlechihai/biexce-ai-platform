@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biexce.local/schemas/harness-manifest-v2.json",
+  "title": "Biexce OpenCode Harness Manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "supported_opencode",
+    "defaults",
+    "model_binding",
+    "disabled_builtin_agents",
+    "agents",
+    "skills",
+    "runtime_files",
+    "provider"
+  ],
+  "properties": {
+    "$schema": { "const": "./harness-manifest.schema.json" },
+    "schema_version": { "const": 2 },
+    "supported_opencode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum_exclusive"],
+      "properties": {
+        "minimum": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "maximum_exclusive": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_agent", "subagent_depth", "share", "autoupdate"],
+      "properties": {
+        "default_agent": { "type": "string" },
+        "subagent_depth": { "type": "integer", "minimum": 0 },
+        "share": { "type": "string" },
+        "autoupdate": { "type": "boolean" }
+      }
+    },
+    "model_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "global", "agents"],
+      "properties": {
+        "state": { "enum": ["unset", "bound"] },
+        "global": { "$ref": "#/$defs/globalBinding" },
+        "agents": {
+          "type": "object",
+          "additionalProperties": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "disabled_builtin_agents": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/agent" }
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/skill" }
+    },
+    "runtime_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/runtimeFile" }
+    },
+    "provider": { "$ref": "#/$defs/provider" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
+    "globalBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "small_model", "variant"],
+      "properties": {
+        "model": { "type": ["string", "null"] },
+        "small_model": { "type": ["string", "null"] },
+        "variant": { "type": ["string", "null"] }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "model", "path", "sha256"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^bx-[a-z0-9-]+$" },
+        "mode": { "enum": ["primary", "all", "subagent"] },
+        "model": { "type": ["string", "null"] },
+        "path": { "type": "string", "pattern": "^agents/.+\\.md$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "area",
+        "status",
+        "applies_to",
+        "sources",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "area": { "type": "string" },
+        "status": { "enum": ["skeleton", "draft", "ready"] },
+        "applies_to": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sources": { "type": "string" },
+        "path": { "type": "string", "pattern": "^skills/.+/SKILL\\.md$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "runtimeFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "path": { "type": "string", "pattern": "^plugins/.+\\.js$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "npm", "base_url", "model"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "npm": { "type": "string" },
+        "base_url": { "type": "string" },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "context", "output"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "context": { "type": "integer", "minimum": 1 },
+            "output": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    }
+  }
+}

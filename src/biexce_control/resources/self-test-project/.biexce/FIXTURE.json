@@ -1,0 +1,5 @@
+{
+  "fixture_id": "self-test-project-v1",
+  "purpose": "Deterministic three-task Autopilot self-test project",
+  "reset_confirmation": "self-test-project-v1"
+}

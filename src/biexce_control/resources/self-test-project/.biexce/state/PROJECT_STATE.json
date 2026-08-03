@@ -1,0 +1,10 @@
+{
+  "project": "biexce-self-test-calculator",
+  "stage": "B1",
+  "updated": "2026-08-01T00:00:00Z",
+  "tasks": [
+    {"id": "t-001", "title": "implement addition and subtraction", "status": "backlog", "round": 0, "agent": null},
+    {"id": "t-002", "title": "implement multiplication and guarded division", "status": "backlog", "round": 0, "agent": null},
+    {"id": "t-003", "title": "add deterministic calculator unit coverage", "status": "backlog", "round": 0, "agent": null}
+  ]
+}

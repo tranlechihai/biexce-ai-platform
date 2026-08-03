@@ -1,0 +1,743 @@
+{
+  "$schema": "./harness-manifest.schema.json",
+  "schema_version": 2,
+  "supported_opencode": {
+    "minimum": "1.18.4",
+    "maximum_exclusive": "1.19.0"
+  },
+  "defaults": {
+    "default_agent": "bx-code",
+    "subagent_depth": 1,
+    "share": "disabled",
+    "autoupdate": false
+  },
+  "model_binding": {
+    "state": "unset",
+    "global": {
+      "model": null,
+      "small_model": null,
+      "variant": null
+    },
+    "agents": {
+      "bx-director": null,
+      "bx-plan": null,
+      "bx-explore": null,
+      "bx-code": null,
+      "bx-fix": null,
+      "bx-test": null,
+      "bx-review": null
+    }
+  },
+  "disabled_builtin_agents": [
+    "build",
+    "explore",
+    "general",
+    "plan",
+    "scout"
+  ],
+  "agents": [
+    {
+      "id": "bx-director",
+      "mode": "primary",
+      "model": null,
+      "path": "agents/bx-director.md",
+      "sha256": "B7CA9F09CA419333145768B9DB551DF69A3DC6289AA9FB4A0039EF9AF58BC8D6"
+    },
+    {
+      "id": "bx-plan",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-plan.md",
+      "sha256": "E6E80641537FDF4DE37AD1733BE3F7F46771BEBE47EFE91D728CE78A8B047038"
+    },
+    {
+      "id": "bx-explore",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-explore.md",
+      "sha256": "25CB5F2FEB62A429C2B07D21D1BB743F944606279F00255A568309CA1899951C"
+    },
+    {
+      "id": "bx-code",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-code.md",
+      "sha256": "4EFBDB15400ADD019B3E7B8512DFF46E842F259CC51791707F9FD685C7EFD8D5"
+    },
+    {
+      "id": "bx-fix",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-fix.md",
+      "sha256": "87B04F9F6E31DD3987E1107149DB6C12BCEC18462280AF4777D9B0E3A57E74CB"
+    },
+    {
+      "id": "bx-test",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-test.md",
+      "sha256": "F103F8C415E615E1D2108BEE476A16A5C828F96D937AF31EFDF368C0900522FB"
+    },
+    {
+      "id": "bx-review",
+      "mode": "all",
+      "model": null,
+      "path": "agents/bx-review.md",
+      "sha256": "5BE64E9E81E97B64C77EBF652DB24ED32A47E4F282D200D1EFE9A105FAD8C7CD"
+    }
+  ],
+  "skills": [
+    {
+      "id": "conventions",
+      "area": "company",
+      "status": "skeleton",
+      "applies_to": [
+        "all"
+      ],
+      "sources": "organization engineering handbook not supplied",
+      "path": "skills/company/conventions/SKILL.md",
+      "sha256": "339576E9F4C04DAC68893BD36CED0C8E98165E82AC4FC3E58A6B6B82631A9AC9"
+    },
+    {
+      "id": "definition-of-done",
+      "area": "company",
+      "status": "ready",
+      "applies_to": [
+        "all"
+      ],
+      "sources": "Scrum Guide 2020; Scrum.org Definition of Done and acceptance criteria guidance; BIEXCE evidence-format and review-verdict",
+      "path": "skills/company/definition-of-done/SKILL.md",
+      "sha256": "1BFCB99CE06166C9B6C7E79E4A10DE268A319869FE019B06F5011BEE5F85AEDD"
+    },
+    {
+      "id": "git-policy",
+      "area": "company",
+      "status": "skeleton",
+      "applies_to": [
+        "bx-director",
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "organization Git governance policy not supplied",
+      "path": "skills/company/git-policy/SKILL.md",
+      "sha256": "03E350EBD47CB369CE055FEEEBEB363E92D7EE067872A0DF7D4F9E751F2528FC"
+    },
+    {
+      "id": "security-policy",
+      "area": "company",
+      "status": "ready",
+      "applies_to": [
+        "all"
+      ],
+      "sources": "BIEXCE agent role and permission contracts; OWASP ASVS 5.0; OWASP Secrets Management Cheat Sheet",
+      "path": "skills/company/security-policy/SKILL.md",
+      "sha256": "ED69CCFC382B073D0FC595172E95C4E738D79829F8C94CE8135997CB8D4BEEAC"
+    },
+    {
+      "id": "biexce-delivery",
+      "area": "core",
+      "status": "draft",
+      "applies_to": [
+        "all bx agents"
+      ],
+      "sources": "harness 0.3.13 biexce-delivery; MetaGPT SOP chain; github/spec-kit; BMAD-METHOD (chưng cất)",
+      "path": "skills/core/biexce-delivery/SKILL.md",
+      "sha256": "E63717DE5B47E1AD267CE4B15BED5AB5D4F2376D04FB771A8193F0041E64A1F7"
+    },
+    {
+      "id": "codebase-brief",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-explore",
+        "bx-plan",
+        "bx-director"
+      ],
+      "sources": "thiết kế Zone A/B Biexce; oh-my-openagent Librarian (ý tưởng, chưng cất)",
+      "path": "skills/core/codebase-brief/SKILL.md",
+      "sha256": "8D613606EDD50E95779EC48E07426EAC73C3766C3A3E75F06F574BF587DBF4C9"
+    },
+    {
+      "id": "evidence-format",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-test",
+        "bx-fix",
+        "bx-code",
+        "bx-review",
+        "bx-director"
+      ],
+      "sources": "harness 0.3.x test contract; scorecard benchmark docs cũ",
+      "path": "skills/core/evidence-format/SKILL.md",
+      "sha256": "B9620BC7EB2C169F3562F5A16812669C89BDACFCDFCA87FE7930482427F6D3E0"
+    },
+    {
+      "id": "git-flow-ai",
+      "area": "core",
+      "status": "draft",
+      "applies_to": [
+        "bx-director",
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "canonical OpenCode permission policy; Pro Git repository inspection guidance",
+      "path": "skills/core/git-flow-ai/SKILL.md",
+      "sha256": "529B869184991B504331087828FD5599A23E89539173415FD1FDDEC2D046FED9"
+    },
+    {
+      "id": "review-verdict",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-review",
+        "bx-director"
+      ],
+      "sources": "harness 0.3.x review contract; oh-my-openagent hyperplan (red-team, bản rút gọn); VoltAgent code-reviewer (chưng cất)",
+      "path": "skills/core/review-verdict/SKILL.md",
+      "sha256": "A1202FB5929BDD23A2E7BA06C078A0F2C9F3EE6C16E30FF477A59045A7BFD60D"
+    },
+    {
+      "id": "state-beacon",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-director"
+      ],
+      "sources": "thiết kế nội bộ Biexce (dashboard Mission Control)",
+      "path": "skills/core/state-beacon/SKILL.md",
+      "sha256": "8171CE2B1D4E2697B41AB565EC2A5CA391E24308604C5D62A39859780453C5A1"
+    },
+    {
+      "id": "task-spec",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-director",
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test"
+      ],
+      "sources": "Anthropic multi-agent lessons (4-part delegation); BMAD story files; github/spec-kit tasks",
+      "path": "skills/core/task-spec/SKILL.md",
+      "sha256": "4A3478E41356CD67EE735811ADDBD4EF47AE8A13E0D6A835D0C32DB00816354D"
+    },
+    {
+      "id": "adr",
+      "area": "roles/architecture",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "AWS Prescriptive Guidance architectural decision records; BMAD-METHOD architecture workflow",
+      "path": "skills/roles/architecture/adr/SKILL.md",
+      "sha256": "1D016AABC3FC36E27F802DE9A8A0C5D7DF5E1A301A12FDADB8AD9C5AF6E95BE1"
+    },
+    {
+      "id": "api-contract",
+      "area": "roles/architecture",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "OpenAPI Specification; RFC 9110 HTTP Semantics; RFC 9457 Problem Details; OWASP API Security Top 10 2023",
+      "path": "skills/roles/architecture/api-contract/SKILL.md",
+      "sha256": "82DECC999CE7BD9AAEA0B4090F313220FA99A3B3DA1731A4268EF25CD1E9D7CD"
+    },
+    {
+      "id": "data-model",
+      "area": "roles/architecture",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "PostgreSQL current documentation on constraints and indexes; OWASP ASVS; BMAD-METHOD architecture workflow",
+      "path": "skills/roles/architecture/data-model/SKILL.md",
+      "sha256": "2A22CE24F4938E335A2064B11CD933288F00AAA188CE22F2E7E56A9976747369"
+    },
+    {
+      "id": "system-design",
+      "area": "roles/architecture",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan"
+      ],
+      "sources": "BMAD-METHOD architecture workflow; C4 model official documentation; GitHub Spec Kit plan workflow",
+      "path": "skills/roles/architecture/system-design/SKILL.md",
+      "sha256": "1265F0C2B78282F2F5E07C61A73A0B4BED5E8E9AED75AB8C4D3C2A0022C06609"
+    },
+    {
+      "id": "api-design",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "RFC 9110 HTTP Semantics; RFC 9457 Problem Details; OpenAPI Specification; OWASP API Security Top 10 2023",
+      "path": "skills/roles/backend/api-design/SKILL.md",
+      "sha256": "C0A9EFCF5A76923DD7AB488441ED1330A0E706CA5712C7151CB28EE9386388D3"
+    },
+    {
+      "id": "auth-security",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review",
+        "bx-test"
+      ],
+      "sources": "OWASP ASVS 5.0; OWASP API Security Top 10 2023; BIEXCE company security policy",
+      "path": "skills/roles/backend/auth-security/SKILL.md",
+      "sha256": "B4399DF1E5C2562582E99A9C084C85E5FB131DFC30ABE2448B9D54160C393C42"
+    },
+    {
+      "id": "database-migration",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "PostgreSQL current ALTER TABLE, constraints, indexes, and transaction documentation; BMAD-METHOD implementation readiness",
+      "path": "skills/roles/backend/database-migration/SKILL.md",
+      "sha256": "CB85405660E1F01AF8C233A9E8A41D6FC8362F4E080A09B7B890EE16C47E78B1"
+    },
+    {
+      "id": "performance",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Google SRE service level objectives and monitoring; OpenTelemetry concepts and metrics; PostgreSQL current EXPLAIN documentation",
+      "path": "skills/roles/backend/performance/SKILL.md",
+      "sha256": "1163B9A05FF23620F08DE382130949FC9B3997F3E447AFF1D86AE77EE223707B"
+    },
+    {
+      "id": "testing-backend",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Martin Fowler practical test pyramid; Cucumber Gherkin reference; OWASP ASVS 5.0",
+      "path": "skills/roles/backend/testing-backend/SKILL.md",
+      "sha256": "C83D0E7D7B0AF0F3F9B964D4AEB3CEE1FA02FDDB1ED53A2370D713E31A787A78"
+    },
+    {
+      "id": "eval-harness",
+      "area": "roles/data-ai",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "NIST AI Risk Management Framework and Playbook; MLflow model evaluation documentation; OpenAI evaluation best practices",
+      "path": "skills/roles/data-ai/eval-harness/SKILL.md",
+      "sha256": "CE86F031099ACEB127BB43C5D005AB5DB91EB3766DE418C72CF2C52B31D80728"
+    },
+    {
+      "id": "python-quality",
+      "area": "roles/data-ai",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Python PEP 8 and typing documentation; Python packaging user guide; pytest good integration practices",
+      "path": "skills/roles/data-ai/python-quality/SKILL.md",
+      "sha256": "D906D24BE498F50C3C602C9F67C85703F44774E24E53CFDB4683AA0C7951E5A8"
+    },
+    {
+      "id": "ci-config",
+      "area": "roles/devops",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-review"
+      ],
+      "sources": "GitHub Actions secure-use documentation; GitLab CI/CD pipeline security documentation; NIST Secure Software Development Framework",
+      "path": "skills/roles/devops/ci-config/SKILL.md",
+      "sha256": "4CDABDC7D3E8FBF3B023071330B68D89ACF91C836886021863C979197DC5FE69"
+    },
+    {
+      "id": "dockerfile",
+      "area": "roles/devops",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Docker official build best practices; Dockerfile reference and build checks; NIST Secure Software Development Framework",
+      "path": "skills/roles/devops/dockerfile/SKILL.md",
+      "sha256": "F0046565FF549C27909DEEF3C090D1DBED02DF101581034E5C5ED16F581BDFCC"
+    },
+    {
+      "id": "env-config",
+      "area": "roles/devops",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Twelve-Factor App Config guidance; OWASP Secrets Management Cheat Sheet; BIEXCE Zone A/B/C security policy",
+      "path": "skills/roles/devops/env-config/SKILL.md",
+      "sha256": "D21753D0167791ACCECBBDC3876A7CA00C57F20D9900F5F87821897884139391"
+    },
+    {
+      "id": "api-docs",
+      "area": "roles/docs-writing",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "OpenAPI Specification; RFC 9110 HTTP Semantics; RFC 9457 Problem Details; Diataxis reference guidance",
+      "path": "skills/roles/docs-writing/api-docs/SKILL.md",
+      "sha256": "D55A12BE00880CDE6DFB2E84786E2776300103FF26D98F35CA83B44C404CD951"
+    },
+    {
+      "id": "changelog",
+      "area": "roles/docs-writing",
+      "status": "ready",
+      "applies_to": [
+        "bx-director",
+        "bx-code",
+        "bx-review"
+      ],
+      "sources": "Keep a Changelog 2.0.0; Semantic Versioning 2.0.0; CommonMark specification",
+      "path": "skills/roles/docs-writing/changelog/SKILL.md",
+      "sha256": "50E2FDA6F9E0C568675FC9B4D471F46DA91E5D542EE96883E4F5D08CA2DC24DD"
+    },
+    {
+      "id": "readme",
+      "area": "roles/docs-writing",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-review"
+      ],
+      "sources": "Diataxis documentation framework; GitHub documentation on repository README files; CommonMark specification",
+      "path": "skills/roles/docs-writing/readme/SKILL.md",
+      "sha256": "69B9841AD84B155A64205FF3D1232DAF768F846BCCAB4E64ED7C61C8B8D23530"
+    },
+    {
+      "id": "report",
+      "area": "roles/docs-writing",
+      "status": "ready",
+      "applies_to": [
+        "bx-director",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "BIEXCE evidence-format and delivery contracts; Diataxis how-to and reference guidance; NIST SSDF verification records",
+      "path": "skills/roles/docs-writing/report/SKILL.md",
+      "sha256": "AE1D81E80C0260AC3A363D80220B4700A3EFF2CF864F9B646A5A161946657786"
+    },
+    {
+      "id": "accessibility",
+      "area": "roles/frontend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "W3C Web Content Accessibility Guidelines 2.2; WAI-ARIA Authoring Practices Guide; HTML Living Standard",
+      "path": "skills/roles/frontend/accessibility/SKILL.md",
+      "sha256": "D16114CB685A173B737182084CDFC9FCC81435221FB289FBF8C905E6455CF502"
+    },
+    {
+      "id": "component-patterns",
+      "area": "roles/frontend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-review"
+      ],
+      "sources": "React official documentation on purity and sharing state; W3C WAI accessible component guidance; Testing Library guiding principles",
+      "path": "skills/roles/frontend/component-patterns/SKILL.md",
+      "sha256": "D5F3737BD38E6BBCCC7D8B746303C2483C67708197549508685C9B21A6E6618A"
+    },
+    {
+      "id": "state-management",
+      "area": "roles/frontend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "React official Managing State and Sharing State guidance; Redux official style guide; WHATWG URL standard",
+      "path": "skills/roles/frontend/state-management/SKILL.md",
+      "sha256": "C9B6112E72B6B7FE079175E8E2A6FCE07E4C0579D18807645F108A1E22A01BB1"
+    },
+    {
+      "id": "styling",
+      "area": "roles/frontend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-review"
+      ],
+      "sources": "MDN responsive design and CSS layout guidance; W3C WCAG 2.2; web.dev responsive design guidance",
+      "path": "skills/roles/frontend/styling/SKILL.md",
+      "sha256": "F4EC0980292E7F31F10DBBF77373FE9159A3A2FCC4FA3FC9467DFFAA9E9D73BB"
+    },
+    {
+      "id": "testing-frontend",
+      "area": "roles/frontend",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Testing Library guiding principles and query priority; Playwright official best practices; W3C WCAG 2.2",
+      "path": "skills/roles/frontend/testing-frontend/SKILL.md",
+      "sha256": "43E9EE9599FBFD4ABA68CAD83CAE248331D959B1A248464CA85F2ED0839EF76F"
+    },
+    {
+      "id": "editmode-playmode-tests",
+      "area": "roles/game-unity",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Unity Test Framework Edit Mode and Play Mode documentation; Unity 6 Test Framework manual; Unity Profiler target-device guidance",
+      "path": "skills/roles/game-unity/editmode-playmode-tests/SKILL.md",
+      "sha256": "9C4009493C98323944C9B78FFCC7FEFFF35273D554F643888C2D6F41307846EB"
+    },
+    {
+      "id": "unity-project-rules",
+      "area": "roles/game-unity",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Unity 6 Manual on assembly definitions and prefabs; Unity Test Framework documentation; Unity Profiler target-device guidance",
+      "path": "skills/roles/game-unity/unity-project-rules/SKILL.md",
+      "sha256": "4E28074B78F2114DC0590AA3B5E0969E0BE32CB393D371D6EB80D78D1CAC5946"
+    },
+    {
+      "id": "kotlin-gradle",
+      "area": "roles/mobile-android",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Android Developers app architecture guide; Kotlin official coding conventions and coroutines guide; Gradle official build best practices",
+      "path": "skills/roles/mobile-android/kotlin-gradle/SKILL.md",
+      "sha256": "405C7E5A361F15A3391D4A1CF11A93EBE87E94B3261F80DA64D5E5C63F6F82C1"
+    },
+    {
+      "id": "testing-android",
+      "area": "roles/mobile-android",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Android Developers testing fundamentals and architecture recommendations; Jetpack Compose testing documentation; Gradle official test guidance",
+      "path": "skills/roles/mobile-android/testing-android/SKILL.md",
+      "sha256": "56304CAED08F4899FFAE3D2A9D076E5FE04912AA42CD0C92B55A9EF6776CECC8"
+    },
+    {
+      "id": "swift-xcode",
+      "area": "roles/mobile-ios",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Swift API Design Guidelines; Apple Swift concurrency documentation; Apple Xcode project and build settings documentation",
+      "path": "skills/roles/mobile-ios/swift-xcode/SKILL.md",
+      "sha256": "157E06501AA80A49B972432BAD5B8B51AD752A74E9FC19F63710C2E354149A33"
+    },
+    {
+      "id": "testing-ios",
+      "area": "roles/mobile-ios",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Apple Swift Testing documentation; Apple XCTest documentation; Apple Xcode testing guide",
+      "path": "skills/roles/mobile-ios/testing-ios/SKILL.md",
+      "sha256": "A3FCAFF16143C850F74F175CDF09DC257AC804A511FB8989E74DC4EA85757595"
+    },
+    {
+      "id": "acceptance-criteria",
+      "area": "roles/planning-ba",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "Cucumber Gherkin reference; Scrum.org acceptance criteria guidance; GitHub Spec Kit specification workflow",
+      "path": "skills/roles/planning-ba/acceptance-criteria/SKILL.md",
+      "sha256": "CA7DB0BDAF8859152BEE7631B38DA70F46533677D85BB8FC6EC7749F1BEF730C"
+    },
+    {
+      "id": "estimate",
+      "area": "roles/planning-ba",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan"
+      ],
+      "sources": "Scrum Guide 2020; GitHub Spec Kit task model; BIEXCE pilot calibration policy",
+      "path": "skills/roles/planning-ba/estimate/SKILL.md",
+      "sha256": "7D238A034BC8DE82D7FD53986C41C1A30D33B10F1895A872EBD30E545268E004"
+    },
+    {
+      "id": "prd",
+      "area": "roles/planning-ba",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-director"
+      ],
+      "sources": "BMAD-METHOD workflow map; GitHub Spec Kit specification workflow",
+      "path": "skills/roles/planning-ba/prd/SKILL.md",
+      "sha256": "7ABDC7811BBDEAA9F254AFAC7F8AE32A16333188A7A80E7C30AEB3D62A6D378B"
+    },
+    {
+      "id": "user-story",
+      "area": "roles/planning-ba",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan"
+      ],
+      "sources": "Agile Alliance user stories and INVEST; BMAD-METHOD story workflow; GitHub Spec Kit task model",
+      "path": "skills/roles/planning-ba/user-story/SKILL.md",
+      "sha256": "EE2DEA6F46100EBC4AFBA1546B5506BDD681C493027A621F5CC092D506BE97BF"
+    },
+    {
+      "id": "browser-exploratory",
+      "area": "roles/qa-testing",
+      "status": "ready",
+      "applies_to": [
+        "bx-test"
+      ],
+      "sources": "Browser Use official browser-use skill and CLI documentation; Microsoft Playwright testing documentation; OWASP Web Security Testing Guide",
+      "path": "skills/roles/qa-testing/browser-exploratory/SKILL.md",
+      "sha256": "03F0DB6FF805756D48FA181EACF1AEB9EF42212E66367ED514F9E6781ED76D0A"
+    },
+    {
+      "id": "regression",
+      "area": "roles/qa-testing",
+      "status": "ready",
+      "applies_to": [
+        "bx-test",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Martin Fowler practical test pyramid; pytest flaky-test guidance; BIEXCE evidence format",
+      "path": "skills/roles/qa-testing/regression/SKILL.md",
+      "sha256": "4F8C6FBD96A36E9522B83E4A17B61763475C40AE54F5A688A436D7BEB966F492"
+    },
+    {
+      "id": "test-strategy",
+      "area": "roles/qa-testing",
+      "status": "ready",
+      "applies_to": [
+        "bx-test",
+        "bx-plan",
+        "bx-review"
+      ],
+      "sources": "Cucumber Gherkin reference; Martin Fowler practical test pyramid; OWASP ASVS 5.0; BIEXCE evidence format",
+      "path": "skills/roles/qa-testing/test-strategy/SKILL.md",
+      "sha256": "A4464AFAF7659CBD99E02AF173A1CDFF75F534A0B82C853E63608FD45D291B49"
+    },
+    {
+      "id": "unit-integration-e2e",
+      "area": "roles/qa-testing",
+      "status": "ready",
+      "applies_to": [
+        "bx-test",
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "Martin Fowler practical test pyramid; Cucumber Gherkin reference; BIEXCE evidence format",
+      "path": "skills/roles/qa-testing/unit-integration-e2e/SKILL.md",
+      "sha256": "E352DBD1B54A26E1B18CC1016587EFA0332EA1BCF7C299FBEB8A19D629F1E35D"
+    },
+    {
+      "id": "owasp-review",
+      "area": "roles/security",
+      "status": "ready",
+      "applies_to": [
+        "bx-review",
+        "bx-test"
+      ],
+      "sources": "OWASP Top 10 2021 and API Security Top 10 2023; OWASP ASVS 5.0; NIST Secure Software Development Framework SP 800-218",
+      "path": "skills/roles/security/owasp-review/SKILL.md",
+      "sha256": "6E52659EC4D6A561DADB7BA06A5AB4A60A3414383E335B9687AE6DB33FC6D914"
+    },
+    {
+      "id": "secure-coding",
+      "area": "roles/security",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-review"
+      ],
+      "sources": "OWASP Developer Guide and Cheat Sheet Series; NIST Secure Software Development Framework SP 800-218; CWE Top 25",
+      "path": "skills/roles/security/secure-coding/SKILL.md",
+      "sha256": "3FC18B9311014F87C00A051A5E1F057553D2F762C52A417E0E370493536742C5"
+    }
+  ],
+  "runtime_files": [
+    {
+      "id": "biexce-control-plugin",
+      "path": "plugins/biexce-control.js",
+      "sha256": "DAD6630C19F86BE01A88780AA47B45067A3D15AF395F8CDFE96BDFD155C78386"
+    }
+  ],
+  "provider": {
+    "id": "biexce-local",
+    "name": "Biexce Local",
+    "npm": "@ai-sdk/openai-compatible",
+    "base_url": "{env:BIEXCE_LOCAL_BASE_URL}",
+    "model": {
+      "id": "vllm/Qwen/Qwen3.6-27B-FP8",
+      "name": "Biexce Qwen3.6 27B Local",
+      "context": 262144,
+      "output": 32768
+    }
+  }
+}

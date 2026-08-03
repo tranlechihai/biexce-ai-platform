@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Biexce Mission Control</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b10;
+      --surface: #10151d;
+      --surface-2: #151c26;
+      --line: #26303d;
+      --text: #edf2f7;
+      --muted: #8793a3;
+      --blue: #56a0ff;
+      --green: #45d483;
+      --amber: #f2b84b;
+      --red: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 15% -20%, #142743 0, transparent 35%),
+        var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(8, 11, 16, .88);
+      backdrop-filter: blur(14px);
+    }
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: linear-gradient(145deg, #287cff, #6c5ce7);
+      font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 15px; letter-spacing: .01em; }
+    .brand p { margin: 1px 0 0; color: var(--muted); font-size: 11px; }
+    .spacer { flex: 1; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .badge.ok, .badge.live { color: var(--green); }
+    .badge.mock, .badge.degraded { color: var(--amber); }
+    .badge.unavailable, .badge.error { color: var(--red); }
+    .shell { max-width: 1540px; margin: 0 auto; padding: 18px; }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 11px;
+      margin-bottom: 14px;
+    }
+    .kpi, .card {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: linear-gradient(160deg, rgba(21, 28, 38, .95), rgba(14, 19, 27, .98));
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .18);
+    }
+    .kpi { padding: 13px 15px; }
+    .kpi .label {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .kpi .value { margin-top: 5px; font-size: 22px; font-weight: 720; }
+    .kpi .detail { color: var(--muted); font-size: 11px; }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(340px, .8fr);
+      gap: 14px;
+    }
+    .card { min-width: 0; overflow: hidden; }
+    .card.wide { grid-column: 1 / -1; }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 15px 11px;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-head h2 { margin: 0; font-size: 13px; }
+    .card-head p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+    .card-head .meta { margin-left: auto; text-align: right; }
+    .card-body { padding: 12px 15px 15px; overflow-x: auto; }
+    .project + .project { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); }
+    .project-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+    .project-title strong { font-size: 14px; }
+    .tag {
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #1d2735;
+      color: #aebbd0;
+      font-size: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .05em;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td { padding: 8px; border-bottom: 1px solid rgba(38, 48, 61, .72); vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    .status { font-weight: 650; }
+    .status.busy, .status.coding, .status.testing, .status.reviewing { color: var(--blue); }
+    .status.done, .status.ok, .status.idle { color: var(--green); }
+    .status.fixing, .status.retry, .status.escalated { color: var(--amber); }
+    .status.unavailable, .status.error { color: var(--red); }
+    .model { max-width: 310px; word-break: break-word; }
+    .model small, .subtle { color: var(--muted); }
+    .empty {
+      padding: 25px 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .panel-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    #feed { max-height: 360px; overflow-y: auto; font: 11px/1.55 ui-monospace, monospace; }
+    .feed-row { padding: 7px 2px; border-bottom: 1px dashed var(--line); }
+    .feed-row:last-child { border: 0; }
+    .feed-type { color: var(--blue); font-weight: 700; }
+    .feed-row.warning .feed-type, .feed-row.error .feed-type { color: var(--red); }
+    .feed-row.beacon .feed-type { color: var(--amber); }
+    @media (max-width: 1040px) {
+      .kpis { grid-template-columns: repeat(3, 1fr); }
+      main { grid-template-columns: 1fr; }
+      .card.wide { grid-column: auto; }
+    }
+    @media (max-width: 620px) {
+      header { padding: 12px 14px; }
+      #clock { display: none; }
+      .shell { padding: 11px; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .kpi:last-child { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-mark">BX</div>
+    <div class="brand">
+      <h1>Mission Control</h1>
+      <p>BIEXCE agent operations</p>
+    </div>
+    <span id="mode" class="badge">Đang kết nối</span>
+    <div class="spacer"></div>
+    <span id="clock" class="subtle"></span>
+  </header>
+
+  <div class="shell">
+    <section class="kpis">
+      <div class="kpi"><div class="label">Agent đang chạy</div><div id="kpi-agents" class="value">—</div><div id="kpi-agent-list" class="detail">—</div></div>
+      <div class="kpi"><div class="label">Task active</div><div id="kpi-active" class="value">—</div><div id="kpi-tasks" class="detail">—</div></div>
+      <div class="kpi"><div class="label">Token input</div><div id="kpi-in" class="value">—</div><div class="detail">OpenCode sessions</div></div>
+      <div class="kpi"><div class="label">Token output</div><div id="kpi-out" class="value">—</div><div class="detail">OpenCode sessions</div></div>
+      <div class="kpi"><div class="label">Chi phí ghi nhận</div><div id="kpi-cost" class="value">—</div><div class="detail">Không suy đoán quota</div></div>
+    </section>
+
+    <main>
+      <section class="card wide">
+        <div class="card-head">
+          <div><h2>Flow board</h2><p>Task, Autopilot, workflow và agent được kỳ vọng theo từng dự án</p></div>
+          <div id="flow-meta" class="meta"></div>
+        </div>
+        <div id="flow" class="card-body"><div class="empty">Đang tải…</div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2>OpenCode sessions</h2><p>Configured model so với actual runtime model</p></div>
+          <div id="sessions-meta" class="meta"></div>
+        </div>
+        <div id="sessions" class="card-body"><div class="empty">Đang tải…</div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2>Agent live feed</h2><p>SSE đã lọc prompt và tool input nhạy cảm</p></div>
+        </div>
+        <div id="feed" class="card-body"><div class="empty">Chờ sự kiện…</div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2>Hardware và serving</h2><p>GPU, CPU, RAM, vLLM throughput và queue</p></div>
+          <div id="hardware-meta" class="meta"></div>
+        </div>
+        <div id="hardware" class="card-body"><div class="empty">Đang tải…</div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2>Token và usage</h2><p>Theo model × agent × dự án; quota Bifrost bổ sung sau</p></div>
+          <div id="usage-meta" class="meta"></div>
+        </div>
+        <div id="usage" class="card-body"><div class="empty">Đang tải…</div></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? "").replace(
+      /[&<>"]/g,
+      (character) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[character])
+    );
+    const number = (value) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(value || 0));
+    const money = (value) => "$" + Number(value || 0).toFixed(Number(value || 0) < 1 ? 3 : 2);
+    const time = (value) => value ? new Date(value).toLocaleString() : "—";
+
+    async function json(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(url + " returned " + response.status);
+      return response.json();
+    }
+
+    function renderMeta(target, meta) {
+      const status = meta?.status || "unavailable";
+      target.innerHTML =
+        '<span class="badge ' + esc(status) + '">' + esc(status.toUpperCase()) + '</span>' +
+        '<div class="panel-note">' + esc(meta?.source || "unknown") + " · " +
+        esc(meta?.machine || "unknown") + (meta?.observed_at ? " · " + esc(time(meta.observed_at)) : "") +
+        (meta?.message ? "<br>" + esc(meta.message) : "") + "</div>";
+    }
+
+    async function loadHealth() {
+      const health = await json("/healthz");
+      const mode = byId("mode");
+      mode.textContent = health.mode === "mock" ? "MOCK · OFFLINE" : "LIVE SOURCE";
+      mode.className = "badge " + health.mode;
+    }
+
+    async function loadOverview() {
+      const data = await json("/api/overview");
+      byId("kpi-agents").textContent = data.agents.running;
+      byId("kpi-agent-list").textContent = data.agents.running_ids.join(", ") || "Không có agent busy";
+      byId("kpi-active").textContent = data.tasks.active;
+      byId("kpi-tasks").textContent = data.tasks.done + "/" + data.tasks.total + " done";
+      byId("kpi-in").textContent = number(data.usage.tokens_in);
+      byId("kpi-out").textContent = number(data.usage.tokens_out);
+      byId("kpi-cost").textContent = money(data.usage.cost_usd);
+    }
+
+    async function loadFlow() {
+      const data = await json("/api/flow");
+      renderMeta(byId("flow-meta"), data.meta);
+      if (!data.projects.length) {
+        byId("flow").innerHTML = '<div class="empty">Chưa đọc được PROJECT_STATE. Kiểm tra BIEXCE_PROJECT_ROOTS.</div>';
+        return;
+      }
+      byId("flow").innerHTML = data.projects.map((project) => {
+        const autopilot = project.autopilot || {};
+        const workflow = project.workflow || {};
+        const done = project.tasks.filter((task) => task.status === "done").length;
+        const rows = project.tasks.map((task) =>
+          "<tr><td>" + esc(task.id) + "</td><td>" + esc(task.title) + "</td>" +
+          '<td class="status ' + esc(task.status) + '">' + esc(task.status) + "</td>" +
+          "<td>" + esc(task.round || "—") + "</td><td>" + esc(task.agent || "—") + "</td></tr>"
+        ).join("");
+        return '<div class="project"><div class="project-title"><strong>' + esc(project.project) + "</strong>" +
+          '<span class="tag">' + esc(project.machine) + "</span>" +
+          '<span class="tag">Stage ' + esc(project.stage) + "</span>" +
+          '<span class="tag">' + done + "/" + project.tasks.length + " done</span>" +
+          '<span class="tag">Auto ' + esc(autopilot.mode || "OFF") + "</span>" +
+          '<span class="tag">' + esc(workflow.phase || "No workflow") + "</span>" +
+          (workflow.expected_agent ? '<span class="tag">Next ' + esc(workflow.expected_agent) + "</span>" : "") +
+          '</div><table><thead><tr><th>Task</th><th>Tiêu đề</th><th>Trạng thái</th><th>Fix</th><th>Agent</th></tr></thead><tbody>' +
+          rows + "</tbody></table></div>";
+      }).join("");
+    }
+
+    async function loadSessions() {
+      const data = await json("/api/sessions");
+      renderMeta(byId("sessions-meta"), data.meta);
+      if (!data.sessions.length) {
+        byId("sessions").innerHTML = '<div class="empty">Không có session hoặc OpenCode serve chưa kết nối.</div>';
+        return;
+      }
+      const rows = data.sessions.slice(0, 30).map((session) => {
+        const configured = session.configured_model || "chưa đọc được";
+        const actual = session.actual_model || "chưa ghi nhận";
+        return "<tr><td><strong>" + esc(session.agent || "unknown") + "</strong><br><small class='subtle'>" +
+          esc(session.project) + "</small></td><td>" + esc(session.title) + "</td>" +
+          '<td class="model">' + esc(actual) + (configured !== actual ? "<br><small>config: " + esc(configured) + "</small>" : "") + "</td>" +
+          '<td class="status ' + esc(session.status) + '">' + esc(session.status) + "<br><small>" + esc(time(session.updated)) + "</small></td></tr>";
+      }).join("");
+      byId("sessions").innerHTML = "<table><thead><tr><th>Agent / project</th><th>Session</th><th>Model actual</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    }
+
+    async function loadHardware() {
+      const data = await json("/api/hardware");
+      renderMeta(byId("hardware-meta"), data.meta);
+      if (!data.gpus?.length) {
+        byId("hardware").innerHTML = '<div class="empty">Collector GPU/vLLM chưa kết nối. Không hiển thị số giả trong LIVE mode.</div>';
+        return;
+      }
+      const rows = data.gpus.map((gpu) =>
+        "<tr><td>GPU " + esc(gpu.index) + " · " + esc(gpu.name) + "</td><td>" + esc(gpu.util_pct) + "%</td><td>" +
+        number(gpu.mem_used_mb) + " / " + number(gpu.mem_total_mb) + " MB</td><td>" + esc(gpu.temp_c) + "°C</td></tr>"
+      ).join("");
+      const vllm = data.vllm || {};
+      byId("hardware").innerHTML =
+        "<table><thead><tr><th>Thiết bị</th><th>Util</th><th>VRAM</th><th>Nhiệt</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+        '<div class="panel-note">CPU ' + esc(data.cpu_pct) + "% · RAM " + esc(data.ram_used_gb) + "/" + esc(data.ram_total_gb) +
+        " GB · vLLM " + esc(vllm.tokens_per_s) + " tok/s · running " + esc(vllm.running) + " · waiting " + esc(vllm.waiting) + "</div>";
+    }
+
+    async function loadUsage() {
+      const data = await json("/api/usage");
+      renderMeta(byId("usage-meta"), data.meta);
+      if (!data.usage.length) {
+        byId("usage").innerHTML = '<div class="empty">Chưa có session usage để tổng hợp.</div>';
+        return;
+      }
+      const rows = data.usage.map((item) =>
+        "<tr><td class='model'>" + esc(item.model) + '<br><small class="subtle">' + esc(item.zone) + "</small></td>" +
+        "<td>" + esc(item.agent) + '<br><small class="subtle">' + esc(item.project) + "</small></td>" +
+        "<td>" + number(item.tokens_in) + " / " + number(item.tokens_out) + "</td><td>" + esc(item.sessions) + "</td><td>" + money(item.cost_usd) + "</td></tr>"
+      ).join("");
+      byId("usage").innerHTML = "<table><thead><tr><th>Model</th><th>Agent / project</th><th>In / out</th><th>Sessions</th><th>Cost</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    }
+
+    function startFeed() {
+      const feed = byId("feed");
+      const stream = new EventSource("/api/events");
+      stream.onmessage = (message) => {
+        const event = JSON.parse(message.data);
+        if (feed.querySelector(".empty")) feed.innerHTML = "";
+        const row = document.createElement("div");
+        row.className = "feed-row " + esc(event.type || "event");
+        let detail = event.text || event.status || event.tool || event.model || event.event || "";
+        if (event.type === "beacon" && event.parsed) {
+          detail = event.parsed.task + " → " + event.parsed.status + " · " + (event.parsed.agent || "—");
+          loadFlow();
+        }
+        row.innerHTML = '<span class="feed-type">' + esc((event.type || "event").toUpperCase()) + "</span> · " +
+          esc(event.agent || event.session || "") + " " + esc(detail);
+        feed.prepend(row);
+        while (feed.childElementCount > 80) feed.removeChild(feed.lastChild);
+      };
+      stream.onerror = () => {
+        if (!feed.querySelector(".source-error")) {
+          const row = document.createElement("div");
+          row.className = "feed-row warning source-error";
+          row.innerHTML = '<span class="feed-type">SOURCE</span> · đang thử kết nối lại SSE';
+          feed.prepend(row);
+        }
+      };
+    }
+
+    async function refresh() {
+      await Promise.allSettled([
+        loadHealth(), loadOverview(), loadFlow(),
+        loadSessions(), loadHardware(), loadUsage()
+      ]);
+    }
+
+    setInterval(() => { byId("clock").textContent = new Date().toLocaleString(); }, 1000);
+    refresh();
+    startFeed();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+#!/bin/bash
+set -u
+
+BIEXCE_CLI_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/../biexce-cli" && pwd)"
+PYTHON_COMMAND=""
+
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_COMMAND="$(command -v python3)"
+else
+    for candidate in /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3; do
+        if [[ -x "$candidate" ]]; then
+            PYTHON_COMMAND="$candidate"
+            break
+        fi
+    done
+fi
+
+if [[ -z "$PYTHON_COMMAND" ]]; then
+    printf 'ERROR: Python 3 was not found.\n' >&2
+    exit 1
+fi
+
+exec "$PYTHON_COMMAND" "$BIEXCE_CLI_ROOT/scripts/biexce.py" "$@"

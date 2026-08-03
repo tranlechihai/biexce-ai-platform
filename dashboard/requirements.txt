@@ -1,0 +1,4 @@
+# BIEXCE Mission Control runtime dependencies
+fastapi>=0.110
+uvicorn[standard]>=0.27
+httpx>=0.26

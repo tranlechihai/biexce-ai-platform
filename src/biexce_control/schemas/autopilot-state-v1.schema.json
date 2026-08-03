@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/control-plane/autopilot-state-v1.schema.json",
+  "title": "BIEXCE Autopilot Control State v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "project_root",
+    "mode",
+    "revision",
+    "updated_at_utc",
+    "updated_by",
+    "reason",
+    "source",
+    "action",
+    "session_id"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://schemas.biexce.local/control-plane/autopilot-state-v1.schema.json"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "project_root": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "mode": {
+      "enum": ["OFF", "ON_IDLE", "ARMED", "RUNNING", "PAUSED"]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "updated_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 64
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "source": {
+      "enum": ["cli", "desktop", "migration"]
+    },
+    "action": {
+      "enum": ["on", "arm", "start", "pause", "off"]
+    },
+    "session_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    }
+  }
+}

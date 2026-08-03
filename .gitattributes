@@ -1,0 +1,24 @@
+* text=auto
+
+.gitattributes text eol=lf
+.gitignore text eol=lf
+VERSION text eol=lf
+*.example text eol=lf
+*.html text eol=lf
+*.txt text eol=lf
+*.js text eol=lf
+
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+
+*.sh text eol=lf
+*.command text eol=lf
+bin/linux/biexce-global text eol=lf
+bin/macos/biexce-global text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+*.zip binary
+*.pyc binary

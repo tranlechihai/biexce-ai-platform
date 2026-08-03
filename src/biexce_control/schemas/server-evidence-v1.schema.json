@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/control-plane/server-evidence-v1.schema.json",
+  "title": "BIEXCE Gate 0 LIVE Server Evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source", "captured_at_utc", "checks"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source": {"const": "LIVE"},
+    "captured_at_utc": {"type": "string", "format": "date-time"},
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vllm", "gpu", "quota", "concurrency"],
+      "properties": {
+        "vllm": {"$ref": "#/$defs/check"},
+        "gpu": {"$ref": "#/$defs/check"},
+        "quota": {"$ref": "#/$defs/check"},
+        "concurrency": {"$ref": "#/$defs/check"}
+      }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "detail"],
+      "properties": {
+        "ok": {"type": "boolean"},
+        "detail": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
