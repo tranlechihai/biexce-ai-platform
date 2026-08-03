@@ -30,7 +30,13 @@ Thiết lập model không tương tác:
 
 ```bash
 biexce setup --model provider/model --yes
+biexce model validate
 ```
+
+`biexce model list` phân biệt model thấy trong catalog với trạng thái credential
+và inference. Nếu provider báo `NOT AUTHENTICATED`, mở OpenCode, chạy `/connect`,
+sau đó kiểm tra lại bằng `biexce status`. Cảnh báo không ngăn user lưu model đã
+chọn.
 
 ## Endpoint model nội bộ
 

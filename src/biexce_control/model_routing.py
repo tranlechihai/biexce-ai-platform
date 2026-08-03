@@ -484,6 +484,63 @@ def opencode_config_root(
     return _source_global_root()
 
 
+def opencode_auth_path(
+    value: str | os.PathLike[str] | Path | None = None,
+) -> Path:
+    """Return OpenCode's per-user credential store without reading secrets."""
+
+    selected = value or os.environ.get("BIEXCE_OPENCODE_AUTH_FILE")
+    if selected:
+        return Path(selected).expanduser().resolve()
+    data_home = os.environ.get("XDG_DATA_HOME")
+    if data_home:
+        return (Path(data_home).expanduser() / "opencode" / "auth.json").resolve()
+    return (Path.home() / ".local" / "share" / "opencode" / "auth.json").resolve()
+
+
+def authenticated_providers(
+    auth_file: str | os.PathLike[str] | Path | None = None,
+) -> tuple[set[str], list[str]]:
+    """Read only provider identifiers from OpenCode's credential store."""
+
+    path = opencode_auth_path(auth_file)
+    if not path.is_file():
+        return set(), []
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return set(), [f"Cannot inspect OpenCode credentials: {error}"]
+    if not isinstance(document, dict):
+        return set(), ["OpenCode credential store root is not a JSON object."]
+    return {
+        provider
+        for provider in document
+        if isinstance(provider, str) and provider.strip()
+    }, []
+
+
+def referenced_provider_ids(document: object) -> set[str]:
+    """Collect providers referenced by primary and fallback agent bindings."""
+
+    if not isinstance(document, dict):
+        return set()
+    bindings = document.get("agents")
+    if not isinstance(bindings, dict):
+        return set()
+    providers: set[str] = set()
+    for binding in bindings.values():
+        if not isinstance(binding, dict):
+            continue
+        models: list[object] = [binding.get("primary")]
+        fallbacks = binding.get("fallbacks")
+        if isinstance(fallbacks, list):
+            models.extend(fallbacks)
+        for model in models:
+            if isinstance(model, str) and _MODEL_PATTERN.fullmatch(model):
+                providers.add(model.split("/", 1)[0])
+    return providers
+
+
 def discover_models(
     opencode_root: str | os.PathLike[str] | Path | None = None,
     *,
@@ -775,3 +832,112 @@ def provider_health(
             {"provider": provider_id, "status": status, "detail": detail}
         )
     return results
+
+
+def _provider_has_configured_credential(provider: object) -> bool:
+    if not isinstance(provider, dict):
+        return False
+    candidates = [provider.get("apiKey")]
+    options = provider.get("options")
+    if isinstance(options, dict):
+        candidates.append(options.get("apiKey"))
+    return any(
+        isinstance(candidate, str) and resolve_config_reference(candidate) is not None
+        for candidate in candidates
+    )
+
+
+def provider_readiness(
+    provider_ids: Iterable[str],
+    opencode_root: str | os.PathLike[str] | Path | None = None,
+    *,
+    auth_file: str | os.PathLike[str] | Path | None = None,
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Describe credential and connectivity readiness without blocking routing."""
+
+    requested = sorted({value for value in provider_ids if value})
+    authenticated, warnings = authenticated_providers(auth_file)
+    root = opencode_config_root(opencode_root)
+    try:
+        config = json.loads((root / "opencode.json").read_text(encoding="utf-8"))
+        configured = config.get("provider", {}) if isinstance(config, dict) else {}
+        if not isinstance(configured, dict):
+            configured = {}
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        configured = {}
+        warnings.append(f"Cannot inspect OpenCode provider config: {error}")
+
+    health_by_provider = {
+        str(item["provider"]): item
+        for item in provider_health(root)
+        if isinstance(item.get("provider"), str)
+    }
+    results: list[dict[str, object]] = []
+    for provider_id in requested:
+        health = health_by_provider.get(provider_id)
+        inference_status = "NOT VERIFIED"
+        if provider_id == LOCAL_PROVIDER:
+            status = str(health.get("status")) if health else "WARN"
+            detail = (
+                str(health.get("detail"))
+                if health
+                else "Local provider is not present in OpenCode config."
+            )
+            results.append(
+                {
+                    "provider": provider_id,
+                    "status": status,
+                    "credential_status": "NOT REQUIRED",
+                    "inference_status": inference_status,
+                    "detail": detail,
+                }
+            )
+            continue
+
+        if provider_id in authenticated:
+            status = "AUTHENTICATED"
+            credential_status = "AUTHENTICATED"
+            detail = "Saved OpenCode credential found; inference is not tested here."
+        elif _provider_has_configured_credential(configured.get(provider_id)):
+            status = "CREDENTIAL CONFIGURED"
+            credential_status = "CONFIGURED"
+            detail = (
+                "Provider credential reference is configured; inference is not tested here."
+            )
+        else:
+            status = "NOT AUTHENTICATED"
+            credential_status = "NOT AUTHENTICATED"
+            detail = (
+                "No saved OpenCode credential found. Catalog visibility does not prove "
+                "inference access; use /connect in OpenCode."
+            )
+        results.append(
+            {
+                "provider": provider_id,
+                "status": status,
+                "credential_status": credential_status,
+                "inference_status": inference_status,
+                "detail": detail,
+            }
+        )
+    return results, warnings
+
+
+def readiness_warnings(readiness: Iterable[dict[str, object]]) -> list[str]:
+    """Convert non-ready provider states into explicit non-blocking warnings."""
+
+    warnings: list[str] = []
+    for item in readiness:
+        provider_id = item.get("provider") or "unknown"
+        status = item.get("status")
+        if status == "NOT AUTHENTICATED":
+            warnings.append(
+                f"Provider {provider_id}: NOT AUTHENTICATED. Catalog models may be "
+                "selected, but inference can fail. Use /connect in OpenCode; routing "
+                "remains allowed."
+            )
+        elif status in {"WARN", "ERROR"}:
+            warnings.append(
+                f"Provider {provider_id}: {status}. {item.get('detail') or ''}".strip()
+            )
+    return warnings

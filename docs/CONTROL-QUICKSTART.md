@@ -9,8 +9,12 @@ Kết nối provider bằng `/connect` trong OpenCode. Xem model bằng `/models
 hoặc:
 
 ```text
-opencode models
+biexce model list
 ```
+
+Danh sách này tách riêng model thấy trong catalog, trạng thái credential của
+provider và trạng thái inference. Model xuất hiện trong catalog không đồng nghĩa
+provider đã đăng nhập hoặc inference đã chạy thành công.
 
 Model ID phải đúng dạng `provider/model`. Gắn model cho 7 agent:
 
@@ -22,11 +26,15 @@ Kiểm tra:
 
 ```text
 biexce status
+biexce model validate
 biexce self-test
 ```
 
 `status` cần hiển thị `Routing: READY (7/7 agents)` và
-`Runtime guard: READY`. Restart OpenCode sau khi thay đổi model routing.
+`Runtime guard: READY`. Nếu provider báo `NOT AUTHENTICATED`, dùng `/connect`
+trong OpenCode rồi chạy lại kiểm tra. Cảnh báo này không chặn user chọn hoặc
+apply model. `self-test --live-inference` mới gửi request inference thật.
+Restart OpenCode sau khi thay đổi model routing.
 
 ## Bật và tắt Auto cho project hiện tại
 

@@ -67,6 +67,19 @@ biexce self-test
 Dùng `/connect` và `/models` trong OpenCode, hoặc chạy `opencode models`, để
 xem các model hiện có. Model ID phải đúng định dạng `provider/model`.
 
+Kiểm tra catalog và trạng thái provider:
+
+```text
+biexce model list
+```
+
+`catalog_status: DISCOVERED` chỉ xác nhận model xuất hiện trong catalog.
+`credential_status` cho biết provider đã có thông tin đăng nhập hay chưa;
+`inference_status: NOT VERIFIED` nghĩa là lệnh này chưa gửi request thật.
+Nếu provider báo `NOT AUTHENTICATED`, dùng `/connect` trong OpenCode. BIEXCE vẫn
+cho phép user chọn và lưu model đó, nhưng sẽ cảnh báo khi setup, validate,
+status và doctor.
+
 Thiết lập tương tác:
 
 ```text
@@ -78,11 +91,14 @@ cần:
 
 ```text
 biexce setup --model <provider/model> --agent bx-code=<provider/model> --yes
+biexce model validate
 ```
 
 Provider nội bộ tùy chọn đọc endpoint từ biến môi trường
 `BIEXCE_LOCAL_BASE_URL`. Giá trị phải là OpenAI-compatible base URL kết thúc
 bằng `/v1`. Hãy khởi động lại OpenCode sau khi đổi endpoint hoặc model routing.
+Kiểm tra inference thật bằng `biexce self-test --live-inference` khi provider
+đã truy cập được.
 
 ## Sử dụng Autopilot
 

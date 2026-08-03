@@ -32,7 +32,9 @@ from .model_routing import (
     model_zone,
     new_unconfigured_document,
     opencode_config_root,
-    provider_health,
+    provider_readiness,
+    readiness_warnings,
+    referenced_provider_ids,
     routing_status,
     save_routing,
     set_fallback,
@@ -340,6 +342,21 @@ def _inventory(arguments: argparse.Namespace) -> tuple[list[str], list[str]]:
     return discover_models(arguments.opencode_config_dir, include_runtime=True)
 
 
+def _unique_warnings(*groups: list[str]) -> list[str]:
+    return list(dict.fromkeys(item for group in groups for item in group))
+
+
+def _document_readiness(
+    document: dict[str, object], arguments: argparse.Namespace
+) -> tuple[list[dict[str, object]], list[str]]:
+    providers, inspection_warnings = provider_readiness(
+        referenced_provider_ids(document), arguments.opencode_config_dir
+    )
+    return providers, _unique_warnings(
+        inspection_warnings, readiness_warnings(providers)
+    )
+
+
 def _routing_table(document: dict[str, object]) -> list[dict[str, object]]:
     bindings = document["agents"]
     assert isinstance(bindings, dict)
@@ -379,6 +396,8 @@ def _apply_document(
     document: dict[str, object], arguments: argparse.Namespace
 ) -> dict[str, object]:
     models, warnings = _inventory(arguments)
+    providers, provider_warnings = _document_readiness(document, arguments)
+    warnings = _unique_warnings(warnings, provider_warnings)
     errors = validate_routing_document(document, available_models=models or None)
     if errors:
         raise ModelRoutingError("; ".join(errors))
@@ -401,6 +420,7 @@ def _apply_document(
         "applied_path": str(path),
         "opencode_config_path": str(native_path) if native_path else None,
         "bindings": _routing_table(document),
+        "providers": providers,
         "warnings": warnings,
     }
 
@@ -502,10 +522,44 @@ def _handle_quick_setup(arguments: argparse.Namespace) -> int:
 def _handle_model(arguments: argparse.Namespace) -> int:
     if arguments.action == "list":
         models, warnings = _inventory(arguments)
-        _print({"models": models, "warnings": warnings}, as_json=arguments.as_json)
+        provider_ids = {model.split("/", 1)[0] for model in models}
+        providers, inspection_warnings = provider_readiness(
+            provider_ids, arguments.opencode_config_dir
+        )
+        provider_map = {item["provider"]: item for item in providers}
+        model_readiness = []
+        for model in models:
+            provider_id = model.split("/", 1)[0]
+            readiness = provider_map[provider_id]
+            model_readiness.append(
+                {
+                    "id": model,
+                    "provider": provider_id,
+                    "catalog_status": "DISCOVERED",
+                    "credential_status": readiness["credential_status"],
+                    "inference_status": readiness["inference_status"],
+                }
+            )
+        warnings = _unique_warnings(
+            warnings, inspection_warnings, readiness_warnings(providers)
+        )
+        _print(
+            {
+                "models": models,
+                "model_readiness": model_readiness,
+                "providers": providers,
+                "warnings": warnings,
+            },
+            as_json=arguments.as_json,
+        )
         return 0
     if arguments.action == "status":
         status = routing_status(arguments.config_home)
+        providers, warnings = _document_readiness(
+            {"agents": status.get("agents", {})}, arguments
+        )
+        status["providers"] = providers
+        status["warnings"] = warnings
         _print(status, as_json=arguments.as_json)
         return 0 if status["valid"] and status["applied"] else 2
     if arguments.action == "setup":
@@ -556,10 +610,16 @@ def _handle_model(arguments: argparse.Namespace) -> int:
     if arguments.action == "validate":
         document = load_routing(arguments.config_home)
         models, warnings = _inventory(arguments)
+        providers, provider_warnings = _document_readiness(document, arguments)
         errors = validate_routing_document(
             document, available_models=models or None
         )
-        payload = {"ok": not errors, "errors": errors, "warnings": warnings}
+        payload = {
+            "ok": not errors,
+            "errors": errors,
+            "providers": providers,
+            "warnings": _unique_warnings(warnings, provider_warnings),
+        }
         _print(payload, as_json=arguments.as_json)
         return 0 if not errors else 2
     if arguments.action == "apply":
@@ -626,6 +686,9 @@ def _handle_fixture(arguments: argparse.Namespace) -> int:
 def _handle_doctor(arguments: argparse.Namespace) -> int:
     status = routing_status(arguments.config_home)
     runtime_root = opencode_config_root(arguments.opencode_config_dir)
+    providers, warnings = _document_readiness(
+        {"agents": status.get("agents", {})}, arguments
+    )
     plugin = runtime_root / "plugins" / "biexce-control.js"
     runtime_guard = {
         "path": str(plugin),
@@ -636,7 +699,8 @@ def _handle_doctor(arguments: argparse.Namespace) -> int:
     payload: dict[str, object] = {
         "routing": status,
         "runtime_guard": runtime_guard,
-        "providers": provider_health(runtime_root),
+        "providers": providers,
+        "warnings": warnings,
     }
     ok = bool(status["valid"] and status["applied"] and runtime_guard["present"])
     if arguments.project:
@@ -666,7 +730,9 @@ def _handle_quick_status(arguments: argparse.Namespace) -> int:
             if isinstance(bindings.get(agent), dict)
             and isinstance(bindings[agent].get("primary"), str)
         )
-    providers = provider_health(runtime_root)
+    providers, warnings = _document_readiness(
+        {"agents": bindings if isinstance(bindings, dict) else {}}, arguments
+    )
     ok = bool(
         routing.get("valid")
         and routing.get("applied")
@@ -679,6 +745,7 @@ def _handle_quick_status(arguments: argparse.Namespace) -> int:
         "configured_agents": configured_count,
         "runtime_guard": {"present": guard_present, "path": str(plugin)},
         "providers": providers,
+        "warnings": warnings,
         "autopilot": _state_payload(
             state, state_path_for(state.project_root), changed=False
         ),
@@ -709,8 +776,12 @@ def _handle_quick_status(arguments: argparse.Namespace) -> int:
         for provider in providers:
             print(
                 f"Provider {provider.get('provider') or '-'}: "
-                f"{provider.get('status')}"
+                f"{provider.get('status')} | "
+                f"credential={provider.get('credential_status')} | "
+                f"inference={provider.get('inference_status')}"
             )
+        for warning in warnings:
+            print(f"WARNING: {warning}")
     return 0 if ok else 2
 
 
