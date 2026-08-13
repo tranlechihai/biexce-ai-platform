@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/runtime/workflow-policy-v1.schema.json",
+  "title": "BIEXCE Workflow Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "project_root", "requested_profile",
+    "effective_profile", "source", "risk_flags", "policy",
+    "driver_status", "last_terminal_reason", "updated_at_utc", "updated_by"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://schemas.biexce.local/runtime/workflow-policy-v1.schema.json"
+    },
+    "schema_version": { "const": 1 },
+    "project_root": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "requested_profile": {
+      "enum": ["auto", "fast", "standard", "critical", "advisory"]
+    },
+    "effective_profile": {
+      "enum": ["fast", "standard", "critical", "advisory"]
+    },
+    "source": {
+      "enum": ["auto", "explicit", "explicit-override", "risk-escalation"]
+    },
+    "risk_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "execute_source", "max_batch", "require_gate_1", "require_gate_2",
+        "stop_on_task_blocker"
+      ],
+      "properties": {
+        "execute_source": { "type": "boolean" },
+        "max_batch": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "require_gate_1": { "type": "boolean" },
+        "require_gate_2": { "type": "boolean" },
+        "stop_on_task_blocker": { "type": "boolean" }
+      }
+    },
+    "driver_status": {
+      "enum": [
+        "IDLE", "RUNNING", "WAITING_AGENT", "WAITING_HUMAN", "PAUSED",
+        "BLOCKED", "COMPLETE"
+      ]
+    },
+    "last_terminal_reason": { "type": ["string", "null"], "maxLength": 500 },
+    "updated_at_utc": { "type": "string", "format": "date-time", "maxLength": 64 },
+    "updated_by": { "type": "string", "minLength": 1, "maxLength": 256 }
+  }
+}

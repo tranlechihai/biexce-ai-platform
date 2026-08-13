@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -16,15 +16,29 @@ from .autopilot import ControlPlaneError, resolve_project_root
 
 WORKFLOW_SCHEMA_ID = (
     "https://schemas.biexce.local/control-plane/"
+    "autopilot-workflow-v2.schema.json"
+)
+WORKFLOW_SCHEMA_VERSION = 2
+LEGACY_WORKFLOW_SCHEMA_ID = (
+    "https://schemas.biexce.local/control-plane/"
     "autopilot-workflow-v1.schema.json"
 )
-WORKFLOW_SCHEMA_VERSION = 1
+TRANSITION_AUTHORITY = "biexce-runtime"
 WORKFLOW_FILENAME = "AUTOPILOT_WORKFLOW.json"
 WORKFLOW_RELATIVE_PATH = Path(".biexce") / "state" / WORKFLOW_FILENAME
+RECOVERY_FILENAME = "AUTOPILOT_RECOVERY.jsonl"
+RECOVERY_RELATIVE_PATH = Path(".biexce") / "state" / RECOVERY_FILENAME
+COMMAND_FILENAME = "AUTOPILOT_COMMAND.json"
+COMMAND_RELATIVE_PATH = Path(".biexce") / "state" / COMMAND_FILENAME
+COMMAND_SCHEMA_ID = (
+    "https://schemas.biexce.local/control-plane/"
+    "autopilot-command-v1.schema.json"
+)
+DELEGATION_LOCK_FILENAME = "AUTOPILOT_DELEGATION.lock"
 
 PHASES = (
     "EXPLORE", "PLAN", "PLAN_REVIEW", "WAITING_GATE_1", "CODE", "TEST",
-    "FIX", "TASK_REVIEW", "INTEGRATION_TEST", "INTEGRATION_REVIEW",
+    "FIX", "TASK_REVIEW", "INTEGRATION_TEST", "INTEGRATION_FIX", "INTEGRATION_REVIEW",
     "WAITING_GATE_2", "COMPLETE", "BLOCKED",
 )
 PHASE_AGENTS = {
@@ -36,16 +50,22 @@ PHASE_AGENTS = {
     "FIX": "bx-fix",
     "TASK_REVIEW": "bx-review",
     "INTEGRATION_TEST": "bx-test",
+    "INTEGRATION_FIX": "bx-fix",
     "INTEGRATION_REVIEW": "bx-review",
 }
 GATE_STATUSES = ("PENDING", "APPROVED")
 
-_STATE_KEYS = {
+_LEGACY_STATE_KEYS = {
     "$schema", "schema_version", "project_root", "phase", "revision",
     "current_task_id", "plan_revision", "fix_round", "gate_1",
     "gate_1_approved_by", "gate_1_approved_at_utc", "gate_2",
     "gate_2_approved_by", "gate_2_approved_at_utc", "last_agent",
     "last_result", "blocked_reason", "updated_at_utc", "updated_by",
+}
+_STATE_KEYS = _LEGACY_STATE_KEYS | {"transition_authority"}
+_COMMAND_KEYS = {
+    "$schema", "schema_version", "project_root", "command", "reason",
+    "requested_by", "requested_at_utc", "workflow_revision", "task_id",
 }
 
 
@@ -72,6 +92,7 @@ class WorkflowState:
     blocked_reason: str | None
     updated_at_utc: str
     updated_by: str
+    transition_authority: str = TRANSITION_AUTHORITY
 
     @property
     def expected_agent(self) -> str | None:
@@ -98,6 +119,7 @@ class WorkflowState:
             "blocked_reason": self.blocked_reason,
             "updated_at_utc": self.updated_at_utc,
             "updated_by": self.updated_by,
+            "transition_authority": self.transition_authority,
         }
 
 
@@ -169,6 +191,44 @@ def workflow_path_for(project: str | os.PathLike[str] | Path) -> Path:
     return path
 
 
+def recovery_path_for(project: str | os.PathLike[str] | Path) -> Path:
+    project_root = resolve_project_root(project)
+    path = project_root / RECOVERY_RELATIVE_PATH
+    if path.is_symlink():
+        raise WorkflowStateError("Recovery audit file must not be a symlink.")
+    return path
+
+
+def command_path_for(project: str | os.PathLike[str] | Path) -> Path:
+    project_root = resolve_project_root(project)
+    path = project_root / COMMAND_RELATIVE_PATH
+    if path.is_symlink():
+        raise WorkflowStateError("Runtime command file must not be a symlink.")
+    return path
+
+
+def _migrate_workflow_document(
+    document: object, project_root: Path
+) -> tuple[object, bool]:
+    if not isinstance(document, dict):
+        return document, False
+    if (
+        set(document) != _LEGACY_STATE_KEYS
+        or document.get("$schema") != LEGACY_WORKFLOW_SCHEMA_ID
+        or document.get("schema_version") != 1
+    ):
+        return document, False
+    migrated = {
+        **document,
+        "$schema": WORKFLOW_SCHEMA_ID,
+        "schema_version": WORKFLOW_SCHEMA_VERSION,
+        "transition_authority": TRANSITION_AUTHORITY,
+        "updated_at_utc": _utc_timestamp(),
+        "updated_by": "biexce-workflow-migration",
+    }
+    return migrated, True
+
+
 def _state_from_document(document: object, project_root: Path) -> WorkflowState:
     if not isinstance(document, dict) or set(document) != _STATE_KEYS:
         raise WorkflowStateError("Workflow state properties mismatch.")
@@ -176,6 +236,8 @@ def _state_from_document(document: object, project_root: Path) -> WorkflowState:
         raise WorkflowStateError("Workflow schema identifier is invalid.")
     if document["schema_version"] != WORKFLOW_SCHEMA_VERSION:
         raise WorkflowStateError("Workflow schema version is unsupported.")
+    if document["transition_authority"] != TRANSITION_AUTHORITY:
+        raise WorkflowStateError("Workflow transition authority is invalid.")
 
     stored_root = Path(
         _required_text(document["project_root"], "project_root", 4096)
@@ -233,6 +295,7 @@ def _state_from_document(document: object, project_root: Path) -> WorkflowState:
         blocked_reason=_optional_text(document["blocked_reason"], "blocked_reason", 1000),
         updated_at_utc=_timestamp(document["updated_at_utc"], "updated_at_utc", optional=False) or "",
         updated_by=_required_text(document["updated_by"], "updated_by", 256),
+        transition_authority=TRANSITION_AUTHORITY,
     )
 
 
@@ -253,7 +316,11 @@ def load_workflow(
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise WorkflowStateError(f"Workflow state is unreadable: {error}")
-    return _state_from_document(document, project_root)
+    document, migrated = _migrate_workflow_document(document, project_root)
+    state = _state_from_document(document, project_root)
+    if migrated:
+        _write_workflow(state)
+    return state
 
 
 def _write_workflow(state: WorkflowState) -> None:
@@ -292,10 +359,51 @@ def _write_workflow(state: WorkflowState) -> None:
             temporary_path.unlink(missing_ok=True)
 
 
+def _write_json_atomically(path: Path, document: object, label: str) -> None:
+    directory = path.parent
+    directory.mkdir(parents=True, exist_ok=True)
+    if path.is_symlink():
+        raise WorkflowStateError(f"{label} must not be a symlink.")
+    payload = (
+        json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+    ).encode("utf-8")
+    descriptor = -1
+    temporary_path: Path | None = None
+    try:
+        descriptor, name = tempfile.mkstemp(
+            prefix=f".{path.name}.", suffix=".tmp", dir=directory
+        )
+        temporary_path = Path(name)
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        json.loads(temporary_path.read_text(encoding="utf-8"))
+        os.replace(temporary_path, path)
+        temporary_path = None
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise WorkflowStateError(f"Cannot persist {label} atomically: {error}")
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
 def initialize_workflow(
     project: str | os.PathLike[str] | Path, *, actor: str
 ) -> tuple[WorkflowState, bool]:
     project_root = resolve_project_root(project)
+    artifact_root = project_root / ".biexce"
+    reports_root = artifact_root / "reports"
+    for directory, label in (
+        (artifact_root, ".biexce"),
+        (reports_root, ".biexce/reports"),
+    ):
+        if directory.exists() and (directory.is_symlink() or not directory.is_dir()):
+            raise WorkflowStateError(f"{label} is not a safe managed directory.")
+        directory.mkdir(parents=True, exist_ok=True)
     existing = load_workflow(project_root)
     if existing is not None:
         return existing, False
@@ -323,76 +431,6 @@ def initialize_workflow(
     return state, True
 
 
-def _task_dependencies(path: Path) -> tuple[str, ...]:
-    text = path.read_text(encoding="utf-8")
-    match = re.search(r"(?mi)^Depends on:\s*(.+?)(?:\s*[·|]\s*Effort:|$)", text)
-    if not match or match.group(1).strip().lower() == "none":
-        return ()
-    return tuple(re.findall(r"t-[0-9]{3}", match.group(1)))
-
-
-def _next_ready_task(project_root: Path) -> tuple[str | None, bool]:
-    state_path = project_root / ".biexce" / "state" / "PROJECT_STATE.json"
-    try:
-        document = json.loads(state_path.read_text(encoding="utf-8"))
-        tasks = document["tasks"]
-        if not isinstance(tasks, list) or not tasks:
-            raise ValueError("PROJECT_STATE tasks must be non-empty.")
-        done = {
-            item["id"]
-            for item in tasks
-            if isinstance(item, dict) and item.get("status") == "done"
-        }
-        pending = [
-            item
-            for item in tasks
-            if isinstance(item, dict) and item.get("status") == "backlog"
-        ]
-        if not pending:
-            all_done = all(
-                isinstance(item, dict) and item.get("status") == "done"
-                for item in tasks
-            )
-            return None, all_done
-        for item in pending:
-            task_id = item.get("id")
-            if not isinstance(task_id, str):
-                continue
-            dependencies = _task_dependencies(
-                project_root / ".biexce" / "tasks" / f"{task_id}.md"
-            )
-            if all(dependency in done for dependency in dependencies):
-                return task_id, False
-    except (OSError, UnicodeError, json.JSONDecodeError, KeyError, ValueError) as error:
-        raise WorkflowStateError(f"Cannot select the next task: {error}")
-    raise WorkflowStateError("No backlog task is ready; dependency DAG is blocked.")
-
-
-def _require_final_reports(project_root: Path) -> None:
-    project_state_path = project_root / ".biexce" / "state" / "PROJECT_STATE.json"
-    try:
-        project_state = json.loads(project_state_path.read_text(encoding="utf-8"))
-        tasks = project_state["tasks"]
-        if project_state["stage"] not in {"B4", "B5"}:
-            raise WorkflowStateError("Gate 2 requires PROJECT_STATE stage B4 or B5.")
-        if not isinstance(tasks, list) or not tasks or not all(
-            isinstance(task, dict) and task.get("status") == "done" for task in tasks
-        ):
-            raise WorkflowStateError("Gate 2 requires every task to be done.")
-    except (OSError, UnicodeError, json.JSONDecodeError, KeyError) as error:
-        raise WorkflowStateError(f"Gate 2 cannot validate PROJECT_STATE: {error}")
-    reports = project_root / ".biexce" / "reports"
-    for name in ("INTEGRATION_REPORT.md", "FINAL_REPORT.md"):
-        path = reports / name
-        if path.is_symlink() or not path.is_file():
-            raise WorkflowStateError(f"Gate 2 requires {path}.")
-        try:
-            if not path.read_text(encoding="utf-8").strip():
-                raise WorkflowStateError(f"Gate 2 report is empty: {path}")
-        except (OSError, UnicodeError) as error:
-            raise WorkflowStateError(f"Gate 2 cannot read {path}: {error}")
-
-
 def approve_gate(
     project: str | os.PathLike[str] | Path,
     gate: int,
@@ -400,60 +438,121 @@ def approve_gate(
     actor: str,
     gate_1_validator: GateValidator | None = None,
 ) -> WorkflowState:
+    del project, gate, actor, gate_1_validator
+    raise WorkflowStateError(
+        "Human Gate transitions are runtime-owned. Approve the Gate inside "
+        "OpenCode Desktop or TUI; the CLI cannot bypass it."
+    )
+
+
+def resolve_blocked_workflow(
+    project: str | os.PathLike[str] | Path,
+    *,
+    action: str,
+    actor: str,
+    reason: str,
+) -> tuple[WorkflowState, dict[str, object]]:
+    """Authorize one audited fix after the automatic fix cap is reached."""
+    if action != "manual-fix":
+        raise WorkflowStateError(f"Unsupported recovery action: {action!r}.")
+    actor = _required_text(actor, "actor", 256)
+    reason = _required_text(reason, "reason", 1000)
     state = load_workflow(project, required=True)
     assert state is not None
-    actor = _required_text(actor, "actor", 256)
-    now = _utc_timestamp()
-    if gate == 1:
-        if state.phase != "WAITING_GATE_1" or state.gate_1 != "PENDING":
-            raise WorkflowStateError(
-                f"Gate 1 approval is invalid while workflow phase is {state.phase}."
-            )
-        if gate_1_validator is None:
-            raise WorkflowStateError("Gate 1 validator is required.")
-        gate_1_validator(state.project_root)
-        task_id, all_done = _next_ready_task(state.project_root)
-        phase = "INTEGRATION_TEST" if all_done else "CODE"
-        if not all_done and task_id is None:
-            raise WorkflowStateError("Gate 1 found no executable task.")
-        next_state = replace(
-            state,
-            phase=phase,
-            revision=state.revision + 1,
-            current_task_id=task_id,
-            gate_1="APPROVED",
-            gate_1_approved_by=actor,
-            gate_1_approved_at_utc=now,
-            last_agent=None,
-            last_result="GATE_1_APPROVED",
-            blocked_reason=None,
-            updated_at_utc=now,
-            updated_by=actor,
+    if state.phase != "BLOCKED":
+        raise WorkflowStateError(
+            f"Recovery requires workflow BLOCKED, found {state.phase}."
         )
-    elif gate == 2:
-        if state.phase != "WAITING_GATE_2" or state.gate_2 != "PENDING":
-            raise WorkflowStateError(
-                f"Gate 2 approval is invalid while workflow phase is {state.phase}."
-            )
-        _require_final_reports(state.project_root)
-        next_state = replace(
-            state,
-            phase="COMPLETE",
-            revision=state.revision + 1,
-            current_task_id=None,
-            gate_2="APPROVED",
-            gate_2_approved_by=actor,
-            gate_2_approved_at_utc=now,
-            last_agent=None,
-            last_result="GATE_2_APPROVED",
-            blocked_reason=None,
-            updated_at_utc=now,
-            updated_by=actor,
+    if state.gate_1 != "APPROVED" or state.current_task_id is None:
+        raise WorkflowStateError(
+            "Manual-fix recovery requires an approved task after Gate 1."
         )
-    else:
-        raise WorkflowStateError("Gate must be 1 or 2.")
-    _write_workflow(next_state)
-    return next_state
+    expected_reason = f"Fix cap reached for {state.current_task_id}"
+    if state.fix_round != 3 or state.blocked_reason != expected_reason:
+        raise WorkflowStateError(
+            "Manual-fix recovery is only valid after the task fix cap is reached."
+        )
+
+    lock = (
+        state.project_root
+        / ".biexce"
+        / "state"
+        / DELEGATION_LOCK_FILENAME
+    )
+    if lock.exists() or lock.is_symlink():
+        raise WorkflowStateError(
+            "Cannot recover while the Autopilot delegation lock exists."
+        )
+
+    project_state_path = (
+        state.project_root / ".biexce" / "state" / "PROJECT_STATE.json"
+    )
+    try:
+        if project_state_path.is_symlink() or not project_state_path.is_file():
+            raise ValueError("PROJECT_STATE must be a regular file.")
+        project_state = json.loads(
+            project_state_path.read_text(encoding="utf-8")
+        )
+        if not isinstance(project_state, dict) or set(project_state) != {
+            "project", "stage", "updated", "tasks",
+        }:
+            raise ValueError("PROJECT_STATE properties are invalid.")
+        tasks = project_state["tasks"]
+        if not isinstance(tasks, list) or not tasks:
+            raise ValueError("PROJECT_STATE tasks must be non-empty.")
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as error:
+        raise WorkflowStateError(f"Cannot recover PROJECT_STATE: {error}")
+
+    recovered = False
+    active_statuses = {"planning", "coding", "testing", "fixing", "reviewing"}
+    next_tasks: list[dict[str, object]] = []
+    for item in tasks:
+        if not isinstance(item, dict) or set(item) != {
+            "id", "title", "status", "round", "agent",
+        }:
+            raise WorkflowStateError("PROJECT_STATE task properties are invalid.")
+        task = dict(item)
+        if task["id"] == state.current_task_id:
+            if task["status"] not in {"escalated", "fixing"}:
+                raise WorkflowStateError(
+                    "Blocked task must be escalated before manual-fix recovery."
+                )
+            if task["round"] != state.fix_round:
+                raise WorkflowStateError(
+                    "Blocked task round differs from the workflow fix round."
+                )
+            if task["agent"] not in {None, "bx-fix"}:
+                raise WorkflowStateError("Blocked task has an unexpected owner.")
+            task.update(status="fixing", agent="bx-fix")
+            recovered = True
+        elif task["status"] in active_statuses:
+            raise WorkflowStateError(
+                "Another active task violates WIP=1; recovery denied."
+            )
+        next_tasks.append(task)
+    if not recovered:
+        raise WorkflowStateError(
+            f"Current task is missing from PROJECT_STATE: {state.current_task_id}."
+        )
+
+    del next_tasks
+    command: dict[str, object] = {
+        "$schema": COMMAND_SCHEMA_ID,
+        "schema_version": 1,
+        "project_root": str(state.project_root),
+        "command": "RECOVER_MANUAL_FIX",
+        "reason": reason,
+        "requested_by": actor,
+        "requested_at_utc": _utc_timestamp(),
+        "workflow_revision": state.revision,
+        "task_id": state.current_task_id,
+    }
+    if set(command) != _COMMAND_KEYS:
+        raise WorkflowStateError("Runtime command properties mismatch.")
+    _write_json_atomically(
+        command_path_for(state.project_root), command, "runtime command"
+    )
+    return state, command
 
 
 def workflow_payload(state: WorkflowState | None) -> dict[str, object] | None:

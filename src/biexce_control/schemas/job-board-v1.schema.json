@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/runtime/job-board-v1.schema.json",
+  "title": "BIEXCE Persistent Job Board v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "project_root", "revision", "jobs",
+    "updated_at_utc"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://schemas.biexce.local/runtime/job-board-v1.schema.json"
+    },
+    "schema_version": { "const": 1 },
+    "project_root": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "updated_at_utc": { "type": "string", "format": "date-time" },
+    "jobs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/job" }
+    }
+  },
+  "$defs": {
+    "nullableString": { "type": ["string", "null"] },
+    "stringList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "job_id", "trace_id", "task_id", "agent", "session_id", "phase",
+        "status", "dependencies", "read_scope", "write_scope", "model",
+        "attempt", "recovery_count", "created_at_utc", "started_at_utc",
+        "deadline_at_utc", "completed_at_utc", "updated_at_utc",
+        "result_status", "error"
+      ],
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^job-[A-Za-z0-9._-]{1,180}$"
+        },
+        "trace_id": { "type": "string", "minLength": 1 },
+        "task_id": { "type": ["string", "null"], "pattern": "^t-[0-9]{3}$" },
+        "agent": { "type": "string", "minLength": 1 },
+        "session_id": { "$ref": "#/$defs/nullableString" },
+        "phase": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": [
+            "QUEUED", "RUNNING", "WAITING_DEPENDENCY", "WAITING_MODEL",
+            "WAITING_HUMAN", "RETRYING", "FALLBACK", "BLOCKED", "FAILED",
+            "TIMED_OUT", "CANCELLED", "COMPLETED"
+          ]
+        },
+        "dependencies": { "$ref": "#/$defs/stringList" },
+        "read_scope": { "$ref": "#/$defs/stringList" },
+        "write_scope": { "$ref": "#/$defs/stringList" },
+        "model": { "$ref": "#/$defs/nullableString" },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "recovery_count": { "type": "integer", "minimum": 0 },
+        "created_at_utc": { "type": "string", "format": "date-time" },
+        "started_at_utc": { "$ref": "#/$defs/nullableString" },
+        "deadline_at_utc": { "$ref": "#/$defs/nullableString" },
+        "completed_at_utc": { "$ref": "#/$defs/nullableString" },
+        "updated_at_utc": { "type": "string", "format": "date-time" },
+        "result_status": { "$ref": "#/$defs/nullableString" },
+        "error": { "$ref": "#/$defs/nullableString" }
+      }
+    }
+  }
+}

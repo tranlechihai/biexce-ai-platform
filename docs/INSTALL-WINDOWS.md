@@ -44,8 +44,26 @@ OpenAI-compatible base URL bằng biến môi trường của người dùng:
 )
 ```
 
-Mở terminal mới và khởi động lại OpenCode sau khi đổi giá trị. Không commit
-endpoint công ty, credential hoặc Authorization header vào source repository.
+Nếu gateway bắt buộc Bifrost Virtual Key, nhập key bằng prompt ẩn và lưu theo
+Windows user:
+
+```powershell
+$secureKey = Read-Host 'Bifrost Virtual Key' -AsSecureString
+$pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureKey)
+try {
+    $plainKey = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+    [Environment]::SetEnvironmentVariable(
+        'BIEXCE_LOCAL_VIRTUAL_KEY', $plainKey, 'User'
+    )
+}
+finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+    Remove-Variable plainKey, secureKey -ErrorAction SilentlyContinue
+}
+```
+
+Mở terminal mới và khởi động lại OpenCode/OpenChamber sau khi đổi giá trị.
+Không commit endpoint công ty, Virtual Key hoặc header xác thực vào repository.
 
 ## Sử dụng Autopilot
 

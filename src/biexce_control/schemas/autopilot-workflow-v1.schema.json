@@ -20,7 +20,7 @@
     "phase": {
       "enum": [
         "EXPLORE", "PLAN", "PLAN_REVIEW", "WAITING_GATE_1", "CODE",
-        "TEST", "FIX", "TASK_REVIEW", "INTEGRATION_TEST",
+        "TEST", "FIX", "TASK_REVIEW", "INTEGRATION_TEST", "INTEGRATION_FIX",
         "INTEGRATION_REVIEW", "WAITING_GATE_2", "COMPLETE", "BLOCKED"
       ]
     },

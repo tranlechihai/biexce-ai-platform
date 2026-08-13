@@ -27,27 +27,28 @@
 /docs/*STATUS*.md
 /docs/*TEST-MATRIX*.md
 /docs/SMOKE-TEST-*.md
-/scripts/generate_skill_tree.py
 
-# Development-only files excluded from the public installation repository
-/tests/
-/dashboard/tests/
-/fixtures/
-/project-template/
-/scripts/package.ps1
-/src/global/.gitignore
-/src/global/package-lock.json
+# Source template excluded from the managed installation and release package
 /src/global/skills/_TEMPLATE/
 
 # Dependencies and language caches
 node_modules/
+.venv/
+venv/
+env/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.eslintcache
 .coverage
+.coverage.*
+coverage.xml
+junit*.xml
 htmlcov/
+npm-debug.log*
+yarn-error.log*
 
 # Editors and operating systems
 .idea/

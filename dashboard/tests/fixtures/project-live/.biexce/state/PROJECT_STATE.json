@@ -1,0 +1,14 @@
+{
+  "project": "sample",
+  "stage": "B3",
+  "updated": "2026-08-03T08:00:00Z",
+  "tasks": [
+    {
+      "id": "t-001",
+      "title": "work",
+      "status": "coding",
+      "round": 0,
+      "agent": "bx-code"
+    }
+  ]
+}

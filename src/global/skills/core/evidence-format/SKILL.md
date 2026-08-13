@@ -11,6 +11,20 @@ metadata:
 
 # Evidence Format
 
+## Fresh verification trước completion
+
+- Lệnh chứng minh phải được chạy lại trong working tree và môi trường hiện tại,
+  sau thay đổi cuối cùng có liên quan. Kết quả từ phiên cũ không đủ để claim `PASS`.
+- Agent phải đọc exit code và output thực, không suy luận từ việc command có vẻ chạy.
+- Trong Autopilot, lệnh kiểm chứng chạy qua `biexce_run_command`; evidence ghi
+  exit code, duration và `OUTPUT_TRUNCATED`. Output bị giới hạn không được suy
+  diễn thành PASS nếu dòng chứng minh kết quả đã bị cắt.
+- Nếu không thể chạy, dùng `INCONCLUSIVE` và nêu chính xác dependency/environment còn
+  thiếu; không thay bằng dự đoán.
+- Với generated manifest/hash, chạy cả generator/check theo contract trước khi handoff.
+- Evidence chỉ liên quan một criterion; log dài được rút gọn nhưng không được bỏ dòng
+  chứng minh failure hoặc số lượng test.
+
 Nguyên tắc bất di bất dịch: **không có evidence thì không được nói "đã
 pass"** — chỉ được nói "chưa kiểm chứng" kèm lý do.
 
@@ -22,6 +36,23 @@ pass"** — chỉ được nói "chưa kiểm chứng" kèm lý do.
 | C1 <tóm tắt> | `<lệnh>` | PASS (exit 0, 12/12 tests) |
 | C2 <tóm tắt> | đọc file X có hàm Y | PASS (path:line) |
 | C3 <tóm tắt> | KHÔNG KIỂM ĐƯỢC | lý do (thiếu env/VPN/hạ tầng) |
+```
+
+## Bảng quality pipeline (bx-test bắt buộc)
+
+Ghi đúng thứ tự bên dưới. Chỉ `N/A` khi project thật sự không có gate hoặc
+task không thể ảnh hưởng gate đó; một command tồn tại nhưng thiếu môi trường là
+`NOT_RUN` và verdict `INCONCLUSIVE`.
+
+```markdown
+| Gate | Command | Kết quả |
+|---|---|---|
+| Format check | `<command>` | PASS / FAIL / N/A — reason |
+| Lint/static | `<command>` | PASS / FAIL / N/A — reason |
+| Typecheck | `<command>` | PASS / FAIL / N/A — reason |
+| Unit/focused | `<command>` | PASS / FAIL / N/A — reason |
+| Integration/contract/E2E | `<command>` | PASS / FAIL / N/A — reason |
+| Build/package | `<command>` | PASS / FAIL / N/A — reason |
 ```
 
 ## Khối evidence cho một lệnh

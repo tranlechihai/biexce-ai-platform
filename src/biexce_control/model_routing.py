@@ -30,7 +30,8 @@ AGENTS = (
 )
 
 LOCAL_PROVIDER = "biexce-local"
-LOCAL_MODEL = "biexce-local/vllm/Qwen/Qwen3.6-27B-FP8"
+LOCAL_MODEL = "biexce-local/vllm/DeepSeek-V4-Flash-0731"
+LOCAL_VIRTUAL_KEY_ENV = "BIEXCE_LOCAL_VIRTUAL_KEY"
 PROFILES = ("local-only", "hybrid", "cloud-strong")
 ROUTING_SCHEMA_ID = (
     "https://schemas.biexce.local/control-plane/model-routing-v1.schema.json"
@@ -436,6 +437,8 @@ def set_fallback(
         )
     document = _updated(document, actor)
     document["active_profile"] = None
+    bindings = document["agents"]
+    assert isinstance(bindings, dict)
     binding["fallbacks"] = [model]
     binding["source"] = "manual"
     binding["confirmed_cross_zone_fallbacks"] = (
@@ -883,13 +886,23 @@ def provider_readiness(
                 if health
                 else "Local provider is not present in OpenCode config."
             )
+            virtual_key_configured = bool(os.environ.get(LOCAL_VIRTUAL_KEY_ENV))
+            credential_status = (
+                "CONFIGURED" if virtual_key_configured else "NOT CONFIGURED"
+            )
+            credential_detail = (
+                f"{LOCAL_VIRTUAL_KEY_ENV} is configured."
+                if virtual_key_configured
+                else f"{LOCAL_VIRTUAL_KEY_ENV} is not configured; a gateway "
+                "that enforces Bifrost Virtual Keys will reject inference."
+            )
             results.append(
                 {
                     "provider": provider_id,
                     "status": status,
-                    "credential_status": "NOT REQUIRED",
+                    "credential_status": credential_status,
                     "inference_status": inference_status,
-                    "detail": detail,
+                    "detail": f"{detail}; {credential_detail}",
                 }
             )
             continue

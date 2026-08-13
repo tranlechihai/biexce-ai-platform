@@ -13,7 +13,7 @@ chuẩn · Thước chất lượng · Luật escalate · Điều cấm.
 | BX Plan | PM + Kiến trúc sư + Planner | Biến Brief thành MASTER_PLAN + story files; không bao giờ implement |
 | BX Code | Developer | Diff nhỏ nhất đúng story file, kèm test; không vượt writable boundary |
 | BX Fix | Debugger | Sửa đúng root cause theo evidence; không refactor, không "tiện tay" |
-| BX Test | QA độc lập | Map mọi criterion → check; PASS/FAIL/INCONCLUSIVE trung thực |
+| BX Test | QA độc lập | Map criterion → check; chỉ ghi managed report, không sửa source/test |
 | BX Review | Tech lead độc lập | Red-team plan + review diff; verdict không nể nang |
 | BX Explore | Scout/Librarian | Định vị code + chưng cất Codebase Brief; cầu nối biên dữ liệu |
 
@@ -58,13 +58,26 @@ owner + writable files + read-only inputs/tools / out-of-scope — skill
 `task-spec`); kết quả trả về phải khớp format vai trò; thiếu input bắt buộc →
 agent hỏi lại một lần, không đoán.
 
+Trong Autopilot, runtime sở hữu lifecycle kết quả. Child ưu tiên gọi
+`biexce_submit_result`; runtime chuẩn hóa metadata báo cáo không nhạy cảm còn
+thiếu và bỏ qua field phụ. Nếu thiếu tool call, runtime tự tạo kết quả từ
+artifact, diff thực, managed-command evidence và dòng cuối `BIEXCE_STATUS`.
+Filesystem là nguồn sự thật, nên khai báo file của model không thể làm hỏng một
+job hợp lệ. Stale identity, thay đổi thật ngoài scope, PASS thiếu evidence hoặc
+kết quả gửi trễ vẫn bị từ chối.
+
+Artifact ownership được bảo vệ hai lớp: static permission của role và runtime
+write-scope hook. BX Plan chỉ ghi `MASTER_PLAN.md` cùng `.biexce/tasks/**`;
+Project Brief, Codebase Brief và toàn bộ `.biexce/state/**` là read-only đối
+với Plan. Role artifact/read-only không được chạy managed shell command.
+
 ### Cấu trúc giao việc v0.4
 
 Bốn phần bắt buộc của `task-spec` vẫn là nền, nhưng mỗi lần giao việc phải
 truyền đủ envelope: objective, approved context/artifacts, constraints,
 owner role, writable files, read-only inputs/tools, expected output,
-validation/evidence required, và out-of-scope. WIP=1 nghĩa là mỗi task chỉ có
-một owner; owner không tự động tạo thêm quyền tool hoặc mở rộng writable
+validation/evidence required, và out-of-scope. WIP từ 1 đến 4 nhưng mỗi task
+vẫn chỉ có một owner; owner không tự động tạo thêm quyền tool hoặc mở rộng writable
 boundary. Với defect có failing test sẵn, test là read-only evidence mặc định;
 owner sửa là BX Fix, không phải BX Code.
 
@@ -72,9 +85,9 @@ owner sửa là BX Fix, không phải BX Code.
 
 1. Task FAIL → Fix (tối đa **3 vòng**/task; `CHANGES REQUIRED` của Review
    tính là một vòng).
-2. INCONCLUSIVE (thiếu môi trường/VPN/infra) → không đốt vòng fix; Director
-   xử lý blocker hoặc đánh dấu `blocked`.
-3. Spec-defect / vượt writable boundary / task quá to → quay về Plan (plan revision —
+2. INCONCLUSIVE (thiếu môi trường/VPN/infra) → runtime retry, không đốt vòng
+   fix; profile thường pause có thể tiếp tục, `critical` mới block theo contract.
+3. Spec-defect / thay đổi material scope / task quá to → quay về Plan (plan revision —
    không tính vòng fix).
 4. Hết 3 vòng hoặc plan revision quá 2 lần → **Người** quyết: re-plan / waive
    (ghi vào state) / tự làm tay.
@@ -84,17 +97,38 @@ owner sửa là BX Fix, không phải BX Code.
 
 - **Evidence trước — kết luận sau**: không có bằng chứng thì nói "chưa kiểm
   chứng", cấm nói "đã pass" (`evidence-format`).
-- **Biên dữ liệu**: nội dung source/diff/secret không được vào ngữ cảnh model
-  cloud; đường lên cloud duy nhất là artifact đã chưng cất (Brief/plan/spec)
-  (`company/security-policy`).
+- **Biên dữ liệu**: Zone C không được vào model. Zone A mặc định chỉ dùng local;
+  ngoại lệ duy nhất là `bx-review` cloud được đọc raw scoped diff và source tối
+  thiểu liên quan ở `TASK_REVIEW`/`INTEGRATION_REVIEW` khi user đã apply binding.
+  Review vẫn read-only, không được mở rộng audit hoặc đọc secret. Director/Plan
+  cloud chỉ nhận artifact Zone B đã chưng cất (`company/security-policy`).
 - **Git mặc định**: agent không có quyền ghi Git; chỉ `status/diff/log`
   read-only làm bằng chứng. Quyền ghi chỉ được mở bằng policy công ty đã duyệt.
-- **Baseline thực thi**: tuần tự WIP=1, depth=1, không parallel. Chỉ thay đổi
-  khi platform capacity và runtime configuration đã được phê duyệt rõ ràng.
+- **Baseline thực thi**: scheduler DAG, WIP 1–4, depth=1. Phase read-only chỉ
+  chạy song song khi dependency đã xong và model quota còn chỗ. Một working tree
+  chỉ có một `CODE/FIX` writer; writer song song cần isolation riêng.
+- **Autonomous end-to-end**: sau Project Brief, Director gọi `biexce_drive`;
+  runtime tự chạy Explore → Plan → Plan Review đến Gate 1, rồi các batch Code →
+  Test → Fix → Review đến Integration Test → Integration Fix/Retest → Review và
+  Gate 2. Không yêu cầu human gọi agent, xóa lock hoặc sửa state.
+- **Workflow profile**: `auto` dùng `standard`; auth/security/migration/payment/
+  dữ liệu nhạy cảm tăng risk flags và yêu cầu test/review tương ứng nhưng không
+  tự làm workflow cứng lại. Chỉ production/destructive tự nâng `critical`;
+  `fast` dành cho việc nhỏ, `advisory` không sửa source. Đây là policy workflow,
+  không phải model profile và không thay quyền user chọn model từng agent.
+- **Recovery profile thường**: timeout, phiên trùng, reporting drift và file
+  source phát sinh hợp lệ được retry/chuẩn hóa có giới hạn; hết retry chuyển
+  `PAUSED`, không bắt human sửa state. State/Git/secret/path ngoài project và
+  xung đột task song song vẫn bị deny; `critical` giữ exact write scope.
+- **Migration blocker cũ**: ở `standard`/`fast`, scope drift của CODE/FIX được
+  nhận diện từ cả task state và job history rồi bắt buộc kiểm chứng lại qua
+  `BX Test`. FAIL mới mở một vòng `BX Fix` và phải retest; PASS tiếp tục Review.
+  Không có exception theo project/task. Source mutation của Explore/Plan/Test/
+  Review và mọi protected boundary vẫn bị chặn cứng.
 - **Control plane fail-closed**: permission source của cả 7 agent luôn
   `task: deny`; chỉ runtime guard được phép cấp allowlist cho Director khi
   project đang `RUNNING`. Workflow state còn bắt buộc đúng agent theo phase,
-  WIP=1, Gate 1/2 và fix cap; chọn Director hoặc gửi prompt không phải quyền chạy.
+  WIP, write ownership, model quota, Gate 1/2 và fix cap; chọn Director hoặc gửi prompt không phải quyền chạy.
 - **Không đổi vai**: agent được chọn là vai có thẩm quyền; bị yêu cầu làm việc
   của vai khác thì chỉ ra đúng agent, không tự làm thay.
 - **Model/effort do user và cấu hình chọn** — agent không tự đổi model.
@@ -114,12 +148,21 @@ chưa sẵn sàng và không được dùng làm authority. Company/security pol
 
 ## 7. Kiểm chứng tuân thủ
 
-- Tĩnh: manifest v2 hash 7 agent + 50 skill; kiểm frontmatter mode/permission
+- Tĩnh: manifest v2 hash 7 agent + 59 skill; kiểm frontmatter mode/permission
   đúng bảng này; `verify.ps1` chặn lệch chuẩn.
 - Runtime offline: test hermetic chứng minh phase ordering, hai Human Gate,
-  trần 2 vòng plan, 3 vòng Fix, `INCONCLUSIVE`/vượt trần chuyển `BLOCKED` và
-  mọi file state được ghi atomic. Lock project-local còn chặn hai plugin
-  instance cùng delegate, nên WIP=1 không chỉ dựa vào biến nhớ của một process.
+  trần 2 vòng plan, 3 vòng Fix, `INCONCLUSIVE` retry và recovery theo profile,
+  mọi file state được ghi atomic. Job board bền vững và per-job lease chặn hai
+  plugin instance cùng nhận một job. Scheduler chứng minh task disjoint chạy
+  song song, writer xung đột phải chờ và giới hạn local concurrency được tuân
+  thủ. Source mặc định cho phép 4 inference local đồng thời, có thể cấu hình
+  trong khoảng 1–8 bằng `BIEXCE_LOCAL_CONCURRENCY`.
+  Autonomous driver chứng minh drain nhiều batch, pause an toàn và hoàn thành
+  task độc lập trước khi báo blocker.
+  Runtime supervisor tự abort child khi timeout, user cancel hoặc Autopilot
+  OFF; managed command có log cap và dọn process tree trước khi nhả lease.
+  Contract test còn chặn result JSON sai, PASS thiếu exit code, file ngoài
+  writable scope và kết quả đến trễ.
   Live acceptance phải kiểm tra model thực tuân thủ envelope, verdict và
   state beacon trước khi phát hành.
 - Mọi thay đổi vai trò phải sửa đồng thời: agent .md + bảng RACI này +

@@ -45,9 +45,9 @@ from .model_routing import (
 from .validation import GateValidationError, arm_validator, require_project_valid, validate_project
 from .workflow import (
     WorkflowStateError,
-    approve_gate,
     initialize_workflow,
     load_workflow,
+    resolve_blocked_workflow,
     workflow_payload,
 )
 
@@ -154,6 +154,19 @@ def build_parser() -> argparse.ArgumentParser:
     approve = autopilot_actions.add_parser("approve")
     _add_autopilot_arguments(approve, mutate=True)
     approve.add_argument("--gate", type=int, choices=(1, 2), required=True)
+    resolve = autopilot_actions.add_parser(
+        "resolve",
+        help="Authorize an audited recovery for a blocked task.",
+    )
+    resolve.add_argument("--project", required=True)
+    resolve.add_argument(
+        "--action",
+        dest="resolution",
+        choices=("manual-fix",),
+        required=True,
+    )
+    resolve.add_argument("--reason", required=True)
+    _add_json(resolve)
 
     model = commands.add_parser("model")
     model_actions = model.add_subparsers(dest="action", required=True)
@@ -249,7 +262,80 @@ def _state_payload(state, state_path: Path, changed: bool) -> dict[str, object]:
         "action": state.action,
         "session_id": state.session_id,
         "workflow": workflow_payload(load_workflow(state.project_root)),
+        "workflow_policy": _workflow_policy_summary(state.project_root),
+        "scheduler": _scheduler_summary(state.project_root),
     }
+
+
+def _workflow_policy_summary(project_root: Path) -> dict[str, object] | None:
+    path = project_root / ".biexce" / "state" / "AUTOPILOT_POLICY.json"
+    if not path.exists():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        required = {
+            "$schema", "schema_version", "project_root", "requested_profile",
+            "effective_profile", "source", "risk_flags", "policy",
+            "driver_status", "last_terminal_reason", "updated_at_utc", "updated_by",
+        }
+        if not isinstance(document, dict) or set(document) != required:
+            raise ValueError("properties mismatch")
+        if document.get("schema_version") != 1:
+            raise ValueError("schema version is unsupported")
+        if Path(document["project_root"]).resolve() != project_root.resolve():
+            raise ValueError("policy belongs to another project")
+        return {
+            "path": str(path),
+            "requested_profile": document["requested_profile"],
+            "effective_profile": document["effective_profile"],
+            "source": document["source"],
+            "risk_flags": document["risk_flags"],
+            "driver_status": document["driver_status"],
+            "last_terminal_reason": document["last_terminal_reason"],
+        }
+    except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+        return {"path": str(path), "error": str(error)}
+
+
+def _scheduler_summary(project_root: Path) -> dict[str, object] | None:
+    path = project_root / ".biexce" / "state" / "AUTOPILOT_SCHEDULER.json"
+    if not path.exists():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        tasks = document["tasks"]
+        if not isinstance(tasks, dict):
+            raise ValueError("tasks must be an object")
+        active = []
+        ready = []
+        blocked = []
+        for task_id, task in sorted(tasks.items()):
+            if not isinstance(task, dict):
+                raise ValueError(f"task {task_id} must be an object")
+            item = {
+                "task_id": task_id,
+                "phase": task.get("phase"),
+                "status": task.get("status"),
+                "agent": task.get("agent"),
+                "model": task.get("model"),
+                "job_id": task.get("active_job_id") or task.get("last_job_id"),
+            }
+            if task.get("status") == "RUNNING":
+                active.append(item)
+            elif task.get("status") == "READY":
+                ready.append(item)
+            elif task.get("status") == "BLOCKED":
+                blocked.append(item)
+        return {
+            "path": str(path),
+            "revision": document.get("revision"),
+            "wip_limit": document.get("wip_limit"),
+            "active": active,
+            "ready": ready,
+            "blocked": blocked,
+        }
+    except (OSError, UnicodeError, json.JSONDecodeError, KeyError, ValueError) as error:
+        return {"path": str(path), "error": str(error)}
 
 
 def _print_state(payload: dict[str, object], as_json: bool) -> None:
@@ -269,6 +355,32 @@ def _print_state(payload: dict[str, object], as_json: bool) -> None:
         print(f"Next agent: {workflow['expected_agent'] or '-'}")
         print(f"Current task: {workflow['current_task_id'] or '-'}")
         print(f"Human gates: G1={workflow['gate_1']} G2={workflow['gate_2']}")
+    policy = payload.get("workflow_policy")
+    if isinstance(policy, dict):
+        if policy.get("error"):
+            print(f"Workflow profile: ERROR ({policy['error']})")
+        else:
+            print(
+                f"Workflow profile: {policy['effective_profile']} | "
+                f"driver={policy['driver_status']} | source={policy['source']}"
+            )
+    scheduler = payload.get("scheduler")
+    if isinstance(scheduler, dict):
+        if scheduler.get("error"):
+            print(f"Scheduler: ERROR ({scheduler['error']})")
+        else:
+            print(
+                "Scheduler: "
+                f"active={len(scheduler['active'])} "
+                f"ready={len(scheduler['ready'])} "
+                f"blocked={len(scheduler['blocked'])} "
+                f"WIP={scheduler['wip_limit']}"
+            )
+            for job in scheduler["active"]:
+                print(
+                    f"  RUNNING {job['task_id']} {job['phase']} "
+                    f"{job['agent'] or '-'} {job['model'] or '-'}"
+                )
 
 
 def _handle_autopilot(arguments: argparse.Namespace) -> int:
@@ -282,36 +394,39 @@ def _handle_autopilot(arguments: argparse.Namespace) -> int:
         _print(report.to_document(), as_json=arguments.as_json)
         return 0 if report.ok else 2
     state_path = state_path_for(project_root)
-    if arguments.action == "approve":
+    if arguments.action == "resolve":
         state = load_state(project_root)
         if state.mode != "RUNNING":
             raise WorkflowStateError(
-                f"Human Gate approval requires Autopilot RUNNING, found {state.mode}."
+                "Blocked workflow recovery requires Autopilot RUNNING, "
+                f"found {state.mode}."
             )
-        approve_gate(
+        _workflow, recovery = resolve_blocked_workflow(
             project_root,
-            arguments.gate,
+            action=arguments.resolution,
             actor=_actor(),
-            gate_1_validator=(
-                lambda root: require_project_valid(
-                    root,
-                    config_home=arguments.config_home,
-                    opencode_root=arguments.opencode_config_dir,
-                )
-            )
-            if arguments.gate == 1
-            else None,
+            reason=arguments.reason,
         )
-        changed = True
-        if arguments.gate == 2:
-            state, _ = apply_action(
-                project_root,
-                "off",
-                actor=_actor(),
-                reason=arguments.reason or "Human Gate 2 approved",
+        payload = _state_payload(state, state_path, True)
+        payload["recovery"] = recovery
+        if arguments.as_json:
+            _print(payload, as_json=True)
+        else:
+            _print_state(payload, False)
+            print(
+                "Runtime request queued: "
+                f"{recovery['command']} ({recovery['task_id']})"
             )
-        _print_state(_state_payload(state, state_path, changed), arguments.as_json)
+            print(
+                "Request: "
+                f"{project_root / '.biexce' / 'state' / 'AUTOPILOT_COMMAND.json'}"
+            )
         return 0
+    if arguments.action == "approve":
+        raise WorkflowStateError(
+            "Human Gate approval is available only inside OpenCode Desktop or "
+            "TUI. The CLI cannot approve or bypass a Gate."
+        )
     if arguments.action == "status":
         state = load_state(project_root)
         changed = False
@@ -772,6 +887,29 @@ def _handle_quick_status(arguments: argparse.Namespace) -> int:
                 f"next={workflow['expected_agent'] or '-'} | "
                 f"task={workflow['current_task_id'] or '-'}"
             )
+        policy = payload["autopilot"].get("workflow_policy")
+        if isinstance(policy, dict):
+            if policy.get("error"):
+                print(f"Workflow profile: ERROR ({policy['error']})")
+            else:
+                print(
+                    f"Workflow profile: {policy['effective_profile']} | "
+                    f"driver={policy['driver_status']} | source={policy['source']}"
+                )
+        scheduler = payload["autopilot"].get("scheduler")
+        if isinstance(scheduler, dict) and not scheduler.get("error"):
+            print(
+                "Scheduler: "
+                f"active={len(scheduler['active'])} "
+                f"ready={len(scheduler['ready'])} "
+                f"blocked={len(scheduler['blocked'])} "
+                f"WIP={scheduler['wip_limit']}"
+            )
+            for job in scheduler["active"]:
+                print(
+                    f"  RUNNING {job['task_id']} {job['phase']} "
+                    f"{job['agent'] or '-'} {job['model'] or '-'}"
+                )
         print(f"Project: {state.project_root}")
         for provider in providers:
             print(

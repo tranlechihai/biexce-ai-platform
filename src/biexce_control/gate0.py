@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 from .autopilot import ControlPlaneError
 from .model_routing import (
     LOCAL_MODEL,
+    LOCAL_VIRTUAL_KEY_ENV,
     opencode_config_root,
     resolve_config_reference,
     routing_status,
@@ -28,6 +29,30 @@ from .validation import validate_project
 
 
 MatrixStatus = Literal["PASS", "FAIL", "BLOCKED"]
+LOCAL_USER_AGENT = "BIEXCE-Agent-Harness/0.4"
+
+
+def _http_failure_detail(code: int) -> str:
+    if code in {401, 403}:
+        return f"HTTP {code}; virtual key is missing, invalid, or unauthorized"
+    if code == 429:
+        return "HTTP 429; gateway rate limit or quota was reached"
+    if code in {502, 503, 504}:
+        return (
+            f"HTTP {code}; gateway is reachable but the upstream Bifrost/vLLM "
+            "model service is unavailable"
+        )
+    return f"HTTP {code}; gateway request failed"
+
+
+def _local_headers(*, include_content_type: bool = False) -> dict[str, str]:
+    headers: dict[str, str] = {"User-Agent": LOCAL_USER_AGENT}
+    if include_content_type:
+        headers["Content-Type"] = "application/json"
+    virtual_key = os.environ.get(LOCAL_VIRTUAL_KEY_ENV)
+    if virtual_key:
+        headers["x-bf-vk"] = virtual_key
+    return headers
 
 
 @dataclass(frozen=True)
@@ -127,7 +152,10 @@ def _gateway_checks(root: Path) -> list[MatrixCheck]:
         return checks
     models_url = endpoint.rstrip("/") + "/models"
     try:
-        with urlopen(Request(models_url, method="GET"), timeout=5) as response:
+        with urlopen(
+            Request(models_url, headers=_local_headers(), method="GET"),
+            timeout=5,
+        ) as response:
             payload = json.loads(response.read().decode("utf-8"))
         ids = {
             item.get("id")
@@ -153,7 +181,7 @@ def _gateway_checks(root: Path) -> list[MatrixCheck]:
                 "server",
                 "bifrost_models",
                 status,
-                f"HTTP {http_error.code}; per-user credential required",
+                _http_failure_detail(http_error.code),
             )
         )
     except (OSError, URLError, UnicodeError, json.JSONDecodeError) as api_error:
@@ -229,7 +257,7 @@ def _inference_check(root: Path, enabled: bool) -> MatrixCheck:
     request = Request(
         endpoint.rstrip("/") + "/chat/completions",
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers=_local_headers(include_content_type=True),
         method="POST",
     )
     try:
@@ -252,7 +280,7 @@ def _inference_check(root: Path, enabled: bool) -> MatrixCheck:
             "e2e",
             "gateway_to_model",
             status,
-            f"HTTP {http_error.code}; per-user credential may be required",
+            _http_failure_detail(http_error.code),
         )
     except (OSError, URLError, UnicodeError, json.JSONDecodeError) as error:
         return MatrixCheck("e2e", "gateway_to_model", "FAIL", str(error))

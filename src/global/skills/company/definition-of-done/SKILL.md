@@ -21,12 +21,17 @@ Một task chỉ `DONE` khi tất cả mục áp dụng đều có evidence:
 
 1. **Scope:** acceptance criteria đạt; out-of-scope và thay đổi ngoài kế hoạch được báo rõ.
 2. **Code/config:** đúng structure/convention, không để TODO debug/dead code ngoài scope; generated manifest/hash đồng bộ.
-3. **Quality:** focused tests và regression theo blast radius pass; skipped/unchecked được liệt kê, không che flaky.
+3. **Quality:** pipeline áp dụng được đã chạy theo thứ tự format check →
+   lint/static → typecheck → focused/unit → integration/contract/E2E →
+   build/package; regression theo blast radius pass. Gate không tồn tại phải
+   ghi `N/A` có lý do; gate tồn tại nhưng không chạy được là `INCONCLUSIVE`,
+   không phải `DONE`. Skipped/unchecked được liệt kê, không che flaky.
 4. **Security/data:** permission default-deny giữ nguyên; không secret; Zone A/B/C và auth/input/logging được kiểm khi liên quan.
 5. **Compatibility:** contract, migration, installer/package và platform/version support được kiểm theo impact.
 6. **Operations:** error/observability, rollout, rollback/recovery và change notes có khi thay đổi runtime/production.
 7. **Documentation:** user/dev/runbook/task state cập nhật khi behavior hoặc thao tác thay đổi.
-8. **Evidence:** bảng criterion→check, exact command/exit, các phần chưa kiểm và verdict `PASS|FAIL|INCONCLUSIVE`.
+8. **Evidence:** bảng criterion→check, exact command/exit từ lần chạy mới sau thay đổi
+   cuối, các phần chưa kiểm và verdict `PASS|FAIL|INCONCLUSIVE`.
 9. **Review/gate:** bx-review không còn blocker; human approval/merge/deploy gate hoàn tất nếu plan yêu cầu.
 
 Trạng thái dùng thống nhất:

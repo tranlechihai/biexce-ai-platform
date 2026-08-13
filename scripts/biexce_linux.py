@@ -39,6 +39,7 @@ PROVIDER_ID = HARNESS_MANIFEST["provider"]["id"]
 PROVIDER_NAME = HARNESS_MANIFEST["provider"]["name"]
 PROVIDER_PACKAGE = HARNESS_MANIFEST["provider"]["npm"]
 PROVIDER_BASE_URL = HARNESS_MANIFEST["provider"]["base_url"]
+PROVIDER_VIRTUAL_KEY_REFERENCE = "{env:BIEXCE_LOCAL_VIRTUAL_KEY}"
 MODEL_ID = HARNESS_MANIFEST["provider"]["model"]["id"]
 MODEL_NAME = HARNESS_MANIFEST["provider"]["model"]["name"]
 MODEL_CONTEXT = HARNESS_MANIFEST["provider"]["model"]["context"]
@@ -143,9 +144,13 @@ def validate_local_provider(config, canonical_only=False):
         raise RuntimeError("Biexce provider display name is incorrect.")
 
     options = provider["options"]
-    exact_keys(options, ("baseURL",), "Biexce provider options")
+    exact_keys(options, ("baseURL", "headers"), "Biexce provider options")
     if options["baseURL"] != PROVIDER_BASE_URL:
         raise RuntimeError("Biexce provider base URL is incorrect.")
+    headers = options["headers"]
+    exact_keys(headers, ("x-bf-vk",), "Biexce provider headers")
+    if headers["x-bf-vk"] != PROVIDER_VIRTUAL_KEY_REFERENCE:
+        raise RuntimeError("Biexce provider Virtual Key reference is incorrect.")
 
     models = provider["models"]
     exact_keys(models, (MODEL_ID,), "Biexce provider model map")

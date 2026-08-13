@@ -44,11 +44,14 @@ Chỉ máy sử dụng provider nội bộ tùy chọn mới cần biến này:
 
 ```bash
 export BIEXCE_LOCAL_BASE_URL='http://<internal-host>:<port>/v1'
+read -rsp 'Bifrost Virtual Key: ' BIEXCE_LOCAL_VIRTUAL_KEY && echo
+export BIEXCE_LOCAL_VIRTUAL_KEY
 ```
 
-Lưu biến bằng cấu hình shell hoặc môi trường đã được công ty phê duyệt. Không
-commit endpoint thật hoặc credential vào repository. Khởi động lại OpenCode
-sau khi đổi giá trị.
+Chỉ cần biến key khi gateway bắt buộc Bifrost Virtual Key. Lưu endpoint và key
+bằng secret store hoặc môi trường đã được công ty phê duyệt; không ghi key vào
+repository hay shell history. Khởi động lại OpenCode/OpenChamber sau khi đổi
+giá trị.
 
 ## Sử dụng Autopilot
 

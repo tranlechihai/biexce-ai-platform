@@ -124,7 +124,11 @@ function Assert-BiexceLocalProviderContract {
         [Parameter(Mandatory = $true)]
         [string]$Label,
 
-        [bool]$RequireOnlyProvider = $false
+        [bool]$RequireOnlyProvider = $false,
+
+        [bool]$AllowResolvedVirtualKey = $false,
+
+        [string[]]$AllowedBaseUrls = @($expectedProviderBaseUrl)
     )
 
     $providers = Get-BiexcePropertyValue -Object $Config -Name "provider"
@@ -161,11 +165,11 @@ function Assert-BiexceLocalProviderContract {
     ) "$Label local provider options are an object"
     Assert-BiexcePropertyNames `
         -Object $provider.options `
-        -Expected @("baseURL") `
+        -Expected @("baseURL", "headers") `
         -Label "$Label local provider options"
     Assert-Biexce (
-        $provider.options.baseURL -eq $expectedProviderBaseUrl
-    ) "$Label local provider base URL is exact"
+        $AllowedBaseUrls -contains [string]$provider.options.baseURL
+    ) "$Label local provider base URL matches an allowed resolution"
 
     Assert-Biexce (
         $provider.models -is [pscustomobject]
@@ -206,10 +210,22 @@ function Assert-BiexceLocalProviderContract {
         $model.limit.output -le $model.limit.context
     ) "$Label local model output limit does not exceed context"
 
+    $virtualKeyHeader = [string]$provider.options.headers.'x-bf-vk'
+    $validVirtualKeyHeader = $virtualKeyHeader -eq `
+        '{env:BIEXCE_LOCAL_VIRTUAL_KEY}'
+    if (
+        $AllowResolvedVirtualKey -and
+        -not [string]::IsNullOrWhiteSpace($env:BIEXCE_LOCAL_VIRTUAL_KEY)
+    ) {
+        $validVirtualKeyHeader = $validVirtualKeyHeader -or
+            $virtualKeyHeader -eq [string]$env:BIEXCE_LOCAL_VIRTUAL_KEY
+    }
     Assert-Biexce (
         $null -eq $provider.options.PSObject.Properties["apiKey"] -and
-        $null -eq $provider.options.PSObject.Properties["headers"]
-    ) "$Label local provider has no API key or Authorization header"
+        $null -ne $provider.options.PSObject.Properties["headers"] -and
+        $validVirtualKeyHeader -and
+        @($provider.options.headers.PSObject.Properties).Count -eq 1
+    ) "$Label local provider uses only the per-user Virtual Key reference"
     Assert-Biexce (
         $null -eq $provider.PSObject.Properties["variant"] -and
         $null -eq $provider.PSObject.Properties["variants"] -and
@@ -322,23 +338,62 @@ function Assert-BiexceAgentPermissionContract {
 
     if ($AgentName -in @("bx-code", "bx-fix")) {
         Assert-Biexce (
-            $Header -match "(?m)^\s*edit:\s*ask\s*$"
-        ) "$AgentName asks before source edits"
+            $Header -match "(?m)^\s*edit:\s*allow\s*$"
+        ) "$AgentName may edit while runtime enforces the task write scope"
     }
-    elseif ($AgentName -in @("bx-test", "bx-review")) {
+    elseif ($AgentName -eq "bx-test") {
+        Assert-Biexce (
+            $Header -match "(?m)^\s*edit:\s*$" -and
+            $Header -match "(?m)^\s*\.biexce/reports/\*\*:\s*allow\s*$" -and
+            $Header -match '(?m)^\s*[''"]\*[''"]:\s*deny\s*$'
+        ) "$AgentName may write only managed verification reports"
+    }
+    elseif ($AgentName -eq "bx-review") {
         Assert-Biexce (
             $Header -match "(?m)^\s*edit:\s*deny\s*$"
         ) "$AgentName denies edits"
     }
-    elseif ($AgentName -in @("bx-director", "bx-plan")) {
+    elseif ($AgentName -eq "bx-director") {
         Assert-Biexce (
-            $Header -match "(?m)^\s*\.biexce/\*\*:\s*ask\s*$"
-        ) "$AgentName asks before artifact edits"
+            $Header -notmatch "(?m)^\s*\.biexce/\*\*:\s*ask\s*$" -and
+            $Header -match (
+                "(?m)^\s*\.biexce/PROJECT_BRIEF\.md:\s*allow\s*$"
+            ) -and
+            $Header -match (
+                "(?m)^\s*\.biexce/reports/FINAL_REPORT\.md:\s*allow\s*$"
+            )
+        ) "$AgentName owns only kickoff and final-report artifacts"
+    }
+    elseif ($AgentName -eq "bx-plan") {
+        Assert-Biexce (
+            $Header -notmatch "(?m)^\s*\.biexce/\*\*:\s*ask\s*$" -and
+            $Header -match "(?m)^\s*\.biexce/MASTER_PLAN\.md:\s*allow\s*$" -and
+            $Header -match "(?m)^\s*\.biexce/tasks/\*\*:\s*allow\s*$"
+        ) "$AgentName owns only Master Plan and task artifacts"
     }
     elseif ($AgentName -eq "bx-explore") {
         Assert-Biexce (
             $Header -match "(?m)^\s*\.biexce/CODEBASE_BRIEF\.md:\s*allow\s*$"
         ) "bx-explore may write only the managed Codebase Brief"
+    }
+
+    if ($AgentName -eq "bx-review") {
+        foreach ($pattern in @(
+            "*.env", "*.env.*", "*.pem", "*.key", "*.pfx", "*.p12",
+            "*.jks", "*.keystore", "*.mobileprovision", "*id_rsa*",
+            "*id_ed25519*", "*.npmrc", "*.pypirc", "*.netrc",
+            "*secrets*.yaml", "*secrets*.yml", "*credentials*.json",
+            "*service-account*.json", "*google-services.json",
+            "*GoogleService-Info.plist", "*gradle.properties", "*.tfvars",
+            "*.tfvars.json"
+        )) {
+            Assert-Biexce (
+                $Header -match (
+                    "(?m)^\s*['""']" + [regex]::Escape($pattern) +
+                    "['""']:\s*deny\s*$"
+                )
+            ) "bx-review denies Zone C read pattern: $pattern"
+        }
     }
 
     Assert-Biexce (
@@ -806,7 +861,12 @@ if ($runtimeVerificationAvailable) {
         ) "OpenCode resolves the manifest default agent"
         Assert-BiexceLocalProviderContract `
             -Config $resolvedConfig `
-            -Label "OpenCode resolved"
+            -Label "OpenCode resolved" `
+            -AllowResolvedVirtualKey $true `
+            -AllowedBaseUrls @(
+                $expectedProviderBaseUrl,
+                [string]$env:BIEXCE_LOCAL_BASE_URL
+            )
 
         $modelOutput = Invoke-BiexceOpenCode `
             -Arguments @("models", $expectedProviderId, "--pure") `

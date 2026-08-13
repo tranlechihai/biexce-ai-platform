@@ -41,49 +41,49 @@
       "mode": "primary",
       "model": null,
       "path": "agents/bx-director.md",
-      "sha256": "B7CA9F09CA419333145768B9DB551DF69A3DC6289AA9FB4A0039EF9AF58BC8D6"
+      "sha256": "BC2A2F76E1C15992FB406660FEDBD1E85A3E4BAE843531F8970BF9958E9A20B4"
     },
     {
       "id": "bx-plan",
       "mode": "all",
       "model": null,
       "path": "agents/bx-plan.md",
-      "sha256": "E6E80641537FDF4DE37AD1733BE3F7F46771BEBE47EFE91D728CE78A8B047038"
+      "sha256": "389B682D72EC3462805AA93D95DC4A1D78ADBA452A71EDEF068E216CF7425D53"
     },
     {
       "id": "bx-explore",
       "mode": "all",
       "model": null,
       "path": "agents/bx-explore.md",
-      "sha256": "25CB5F2FEB62A429C2B07D21D1BB743F944606279F00255A568309CA1899951C"
+      "sha256": "B4A62EF9FC363DFB6FA97B9BDA527A90C49B975AD9FCBABAE4BE8A44A4C3211B"
     },
     {
       "id": "bx-code",
       "mode": "all",
       "model": null,
       "path": "agents/bx-code.md",
-      "sha256": "4EFBDB15400ADD019B3E7B8512DFF46E842F259CC51791707F9FD685C7EFD8D5"
+      "sha256": "68D318BC970B7B4E1DCCAA565211214074E72544E762E1D5F5E53479D0BDD462"
     },
     {
       "id": "bx-fix",
       "mode": "all",
       "model": null,
       "path": "agents/bx-fix.md",
-      "sha256": "87B04F9F6E31DD3987E1107149DB6C12BCEC18462280AF4777D9B0E3A57E74CB"
+      "sha256": "9A2A2819716470586F894C9296358E1A3689AA7249A76C24A2077D95D5205475"
     },
     {
       "id": "bx-test",
       "mode": "all",
       "model": null,
       "path": "agents/bx-test.md",
-      "sha256": "F103F8C415E615E1D2108BEE476A16A5C828F96D937AF31EFDF368C0900522FB"
+      "sha256": "508F6C05246D3D488E4D2EE6B9390D04762367CDFF937686E75A03A2ADD44881"
     },
     {
       "id": "bx-review",
       "mode": "all",
       "model": null,
       "path": "agents/bx-review.md",
-      "sha256": "5BE64E9E81E97B64C77EBF652DB24ED32A47E4F282D200D1EFE9A105FAD8C7CD"
+      "sha256": "ACE4F9AC8D8DB18C49BD041B76F56347FB9E386F3402AD1A27FF2AAF65BF8BB2"
     }
   ],
   "skills": [
@@ -107,7 +107,7 @@
       ],
       "sources": "Scrum Guide 2020; Scrum.org Definition of Done and acceptance criteria guidance; BIEXCE evidence-format and review-verdict",
       "path": "skills/company/definition-of-done/SKILL.md",
-      "sha256": "1BFCB99CE06166C9B6C7E79E4A10DE268A319869FE019B06F5011BEE5F85AEDD"
+      "sha256": "47C4C587BBB316C3B573A2D5D0F0B9E65EB95E1582211E3123EC6E90DAD4F07F"
     },
     {
       "id": "git-policy",
@@ -132,7 +132,7 @@
       ],
       "sources": "BIEXCE agent role and permission contracts; OWASP ASVS 5.0; OWASP Secrets Management Cheat Sheet",
       "path": "skills/company/security-policy/SKILL.md",
-      "sha256": "ED69CCFC382B073D0FC595172E95C4E738D79829F8C94CE8135997CB8D4BEEAC"
+      "sha256": "90B3BADAD9E45353AAEB767A0A0CB5DF6255F0ACC2836597586620B871016FE3"
     },
     {
       "id": "biexce-delivery",
@@ -143,7 +143,7 @@
       ],
       "sources": "harness 0.3.13 biexce-delivery; MetaGPT SOP chain; github/spec-kit; BMAD-METHOD (chưng cất)",
       "path": "skills/core/biexce-delivery/SKILL.md",
-      "sha256": "E63717DE5B47E1AD267CE4B15BED5AB5D4F2376D04FB771A8193F0041E64A1F7"
+      "sha256": "8424E1DC2CAA305CAFB3780EE3395C629CB2991D07F9EE319623A015EAF30457"
     },
     {
       "id": "codebase-brief",
@@ -159,6 +159,20 @@
       "sha256": "8D613606EDD50E95779EC48E07426EAC73C3766C3A3E75F06F574BF587DBF4C9"
     },
     {
+      "id": "design-discovery",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-director",
+        "bx-plan",
+        "bx-explore",
+        "bx-review"
+      ],
+      "sources": "obra/superpowers brainstorming; BIEXCE task-spec and Human Gate policy",
+      "path": "skills/core/design-discovery/SKILL.md",
+      "sha256": "C6EB0F6E13940B018F3C0391527797750C928B54E958D763CE3AE1A6D6409F3F"
+    },
+    {
       "id": "evidence-format",
       "area": "core",
       "status": "ready",
@@ -171,7 +185,7 @@
       ],
       "sources": "harness 0.3.x test contract; scorecard benchmark docs cũ",
       "path": "skills/core/evidence-format/SKILL.md",
-      "sha256": "B9620BC7EB2C169F3562F5A16812669C89BDACFCDFCA87FE7930482427F6D3E0"
+      "sha256": "8CE9FDB427B6DAF67FE24B47A1690F17CEFA173CAB45DF1E55A166727CE0CC9A"
     },
     {
       "id": "git-flow-ai",
@@ -197,7 +211,7 @@
       ],
       "sources": "harness 0.3.x review contract; oh-my-openagent hyperplan (red-team, bản rút gọn); VoltAgent code-reviewer (chưng cất)",
       "path": "skills/core/review-verdict/SKILL.md",
-      "sha256": "A1202FB5929BDD23A2E7BA06C078A0F2C9F3EE6C16E30FF477A59045A7BFD60D"
+      "sha256": "6ADE547481DB81AE216C6808B17F82D56E0402F9DEA13377D309C9D549925FD3"
     },
     {
       "id": "state-beacon",
@@ -209,6 +223,21 @@
       "sources": "thiết kế nội bộ Biexce (dashboard Mission Control)",
       "path": "skills/core/state-beacon/SKILL.md",
       "sha256": "8171CE2B1D4E2697B41AB565EC2A5CA391E24308604C5D62A39859780453C5A1"
+    },
+    {
+      "id": "systematic-debugging",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-director",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "obra/superpowers systematic-debugging; BIEXCE evidence-format and runtime recovery policy",
+      "path": "skills/core/systematic-debugging/SKILL.md",
+      "sha256": "F66FA5D223E91D1DCC0D1A308B997436466AEB2052C18EFB2E3E688CE128A046"
     },
     {
       "id": "task-spec",
@@ -223,7 +252,21 @@
       ],
       "sources": "Anthropic multi-agent lessons (4-part delegation); BMAD story files; github/spec-kit tasks",
       "path": "skills/core/task-spec/SKILL.md",
-      "sha256": "4A3478E41356CD67EE735811ADDBD4EF47AE8A13E0D6A835D0C32DB00816354D"
+      "sha256": "B5428E8EB2110831D2E1543B7961AE953EA84A3CE999AD6BC8035ED504EC9800"
+    },
+    {
+      "id": "test-driven-development",
+      "area": "core",
+      "status": "ready",
+      "applies_to": [
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "obra/superpowers test-driven-development; BIEXCE unit-integration-e2e and acceptance criteria",
+      "path": "skills/core/test-driven-development/SKILL.md",
+      "sha256": "6B83851FDE54B20473145E50BFD88FAEE903B060204FDE125BA5FA6EC3B3DBEB"
     },
     {
       "id": "adr",
@@ -273,6 +316,21 @@
       "sha256": "1265F0C2B78282F2F5E07C61A73A0B4BED5E8E9AED75AB8C4D3C2A0022C06609"
     },
     {
+      "id": "abuse-moderation",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "OWASP API4 Unrestricted Resource Consumption 2023; OWASP API6 Unrestricted Access to Sensitive Business Flows 2023; OWASP Automated Threats to Web Applications",
+      "path": "skills/roles/backend/abuse-moderation/SKILL.md",
+      "sha256": "2994231840006CE0E647815B7F463797718FA5600D5C7B6FE6D15F5E2170084D"
+    },
+    {
       "id": "api-design",
       "area": "roles/backend",
       "status": "ready",
@@ -314,6 +372,36 @@
       "sha256": "CB85405660E1F01AF8C233A9E8A41D6FC8362F4E080A09B7B890EE16C47E78B1"
     },
     {
+      "id": "media-upload-delivery",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "OWASP File Upload Cheat Sheet; Amazon S3 presigned URL and multipart upload documentation; OWASP API4 Unrestricted Resource Consumption 2023",
+      "path": "skills/roles/backend/media-upload-delivery/SKILL.md",
+      "sha256": "7DEC2F91E9C1068480401DD52F06A22CD17BE40105F2E7AF0AD9AF826F0C30BA"
+    },
+    {
+      "id": "mobile-offline-sync",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Android Developers offline-first architecture; RFC 9110 HTTP Semantics; PostgreSQL current transaction isolation documentation",
+      "path": "skills/roles/backend/mobile-offline-sync/SKILL.md",
+      "sha256": "1BC091EA57E29A2A0C6D934BED24644E11D7974EC595A1D832491DB4906E0371"
+    },
+    {
       "id": "performance",
       "area": "roles/backend",
       "status": "ready",
@@ -326,6 +414,51 @@
       "sources": "Google SRE service level objectives and monitoring; OpenTelemetry concepts and metrics; PostgreSQL current EXPLAIN documentation",
       "path": "skills/roles/backend/performance/SKILL.md",
       "sha256": "1163B9A05FF23620F08DE382130949FC9B3997F3E447AFF1D86AE77EE223707B"
+    },
+    {
+      "id": "push-notification-delivery",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Firebase Cloud Messaging architecture and scale guidance; Apple UserNotifications remote notification provider documentation; RFC 8030 Generic Event Delivery Using HTTP Push",
+      "path": "skills/roles/backend/push-notification-delivery/SKILL.md",
+      "sha256": "562C91BFB338E5A4E3C16A1C21F14B4A28B8188982B697A0570C89A59656AC6F"
+    },
+    {
+      "id": "realtime-event-delivery",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "RFC 6455 The WebSocket Protocol; OWASP WebSocket Security Cheat Sheet; RFC 9110 HTTP Semantics",
+      "path": "skills/roles/backend/realtime-event-delivery/SKILL.md",
+      "sha256": "DB81D85506313F281F718D01381F415D369DD05B057E44DE0D70A54E72FA4E18"
+    },
+    {
+      "id": "social-graph-feed",
+      "area": "roles/backend",
+      "status": "ready",
+      "applies_to": [
+        "bx-plan",
+        "bx-code",
+        "bx-fix",
+        "bx-test",
+        "bx-review"
+      ],
+      "sources": "Android Developers offline-first architecture and Paging guidance; PostgreSQL current index and transaction documentation; OWASP API Security Top 10 2023",
+      "path": "skills/roles/backend/social-graph-feed/SKILL.md",
+      "sha256": "F1AA3037172320BA1A45E94445D04E71506B0740DE32BDB96B000AB70646C3BE"
     },
     {
       "id": "testing-backend",
@@ -679,7 +812,7 @@
       ],
       "sources": "Cucumber Gherkin reference; Martin Fowler practical test pyramid; OWASP ASVS 5.0; BIEXCE evidence format",
       "path": "skills/roles/qa-testing/test-strategy/SKILL.md",
-      "sha256": "A4464AFAF7659CBD99E02AF173A1CDFF75F534A0B82C853E63608FD45D291B49"
+      "sha256": "C3E60A71B73FEB6BB32C672A41F6B53B0CB3E023E00F6EB570A188D6B3510E4D"
     },
     {
       "id": "unit-integration-e2e",
@@ -725,7 +858,57 @@
     {
       "id": "biexce-control-plugin",
       "path": "plugins/biexce-control.js",
-      "sha256": "DAD6630C19F86BE01A88780AA47B45067A3D15AF395F8CDFE96BDFD155C78386"
+      "sha256": "C2E62B9B76463A0A5EC27A5729E4D1D2C9FD9B750FDEFF1E55C38A4C728A4B87"
+    },
+    {
+      "id": "biexce-failure-policy-runtime",
+      "path": "runtime/failure-policy.js",
+      "sha256": "812DD95259A2E4D52E27DE1B2BEFCE6BA42E433B7900D185395AD05305F79730"
+    },
+    {
+      "id": "biexce-scope-policy-runtime",
+      "path": "runtime/scope-policy.js",
+      "sha256": "F11EBF4760DBC5874B48FAD1B22F6BE84814E4C1B2B812FA0B2DCDB19953EEF5"
+    },
+    {
+      "id": "biexce-job-board-runtime",
+      "path": "runtime/job-board.js",
+      "sha256": "4C99FA12BFC3F3B38AEFF594405354172A336972CBC0045123B9B1849D910C62"
+    },
+    {
+      "id": "biexce-observability-runtime",
+      "path": "runtime/observability.js",
+      "sha256": "B8A820A00EDE89548247D4C701555314211288102CEAE1BC179294E96A7BC896"
+    },
+    {
+      "id": "biexce-reconciler-runtime",
+      "path": "runtime/reconciler.js",
+      "sha256": "3DCC975C8D7ED90702855FA67C70A467088E5E29B0A0068864CF83FB57F71176"
+    },
+    {
+      "id": "biexce-resilience-runtime",
+      "path": "runtime/resilience.js",
+      "sha256": "6155ACC5BCC3C9353A385AEB2D7D489A9F9E4C154C053478750B5F516307661A"
+    },
+    {
+      "id": "biexce-scheduler-runtime",
+      "path": "runtime/scheduler.js",
+      "sha256": "C496C1A024FB0995F8565A2BB5849ADA334CFD2714A3F562E2BEC6B0C7522591"
+    },
+    {
+      "id": "biexce-session-registry-runtime",
+      "path": "runtime/session-registry.js",
+      "sha256": "3A87ECC50F38C9A394F8414FA8DD2FB4EA81BEEAE3204956A57F8B9B128A43DB"
+    },
+    {
+      "id": "biexce-supervisor-runtime",
+      "path": "runtime/supervisor.js",
+      "sha256": "17717A60E2A712DE16D60A1F44BD88503F02E8724CB87FB2C674A72BB4963560"
+    },
+    {
+      "id": "biexce-workflow-policy-runtime",
+      "path": "runtime/workflow-policy.js",
+      "sha256": "78A36C6B11759EB14352AFB7062C0DDD246A494462C005D165A99D6935DE6AA6"
     }
   ],
   "provider": {
@@ -734,10 +917,10 @@
     "npm": "@ai-sdk/openai-compatible",
     "base_url": "{env:BIEXCE_LOCAL_BASE_URL}",
     "model": {
-      "id": "vllm/Qwen/Qwen3.6-27B-FP8",
-      "name": "Biexce Qwen3.6 27B Local",
-      "context": 262144,
-      "output": 32768
+      "id": "vllm/DeepSeek-V4-Flash-0731",
+      "name": "Biexce DeepSeek V4 Flash Local",
+      "context": 524288,
+      "output": 65536
     }
   }
 }

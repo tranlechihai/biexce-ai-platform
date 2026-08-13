@@ -86,6 +86,12 @@ def _field(text: str, label: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def _scope_item(value: str) -> str:
+    trimmed = value.strip()
+    inline = re.fullmatch(r"(`+)(.*?)\1", trimmed, flags=re.DOTALL)
+    return (inline.group(2).strip() if inline else trimmed).replace("\\", "/")
+
+
 def _parse_task(path: Path) -> tuple[dict[str, object] | None, list[str]]:
     errors: list[str] = []
     try:
@@ -104,8 +110,11 @@ def _parse_task(path: Path) -> tuple[dict[str, object] | None, list[str]]:
             errors.append(f"{task_id}: missing heading '{heading}'.")
     if not re.search(r"(?m)^- \[ \] .+", text):
         errors.append(f"{task_id}: acceptance criteria are missing.")
-    if not re.search(r"(?m)^Verify:\s*`[^`]+`\s*$", text):
+    verify_match = re.search(r"(?m)^Verify:\s*`([^`]+)`\s*$", text)
+    if not verify_match:
         errors.append(f"{task_id}: Verify command is missing.")
+    elif re.match(r"(?i)^N/?A\b", verify_match.group(1).strip()):
+        errors.append(f"{task_id}: Verify must be an executable command, not N/A.")
     owner = _field(text, "Owner role")
     writable = _field(text, "Writable files")
     read_only = _field(text, "Read-only inputs")
@@ -126,6 +135,20 @@ def _parse_task(path: Path) -> tuple[dict[str, object] | None, list[str]]:
         errors.append(f"{task_id}: Depends on is missing.")
     if owner not in OWNER_ROLES:
         errors.append(f"{task_id}: owner role is invalid or missing.")
+    if owner == "bx-test":
+        scopes = [] if (writable or "").strip().lower() == "none" else [
+            _scope_item(item)
+            for item in (writable or "").split(",")
+            if item.strip()
+        ]
+        if any(
+            not item.startswith(".biexce/reports/") or ".." in item.split("/")
+            for item in scopes
+        ):
+            errors.append(
+                f"{task_id}: bx-test ownership is verification-only; Writable "
+                "files must be none or paths under .biexce/reports/."
+            )
     for label, value in (
         ("Writable files", writable),
         ("Read-only inputs", read_only),
@@ -191,14 +214,21 @@ def _project_artifact_checks(project: Path) -> list[ValidationCheck]:
     except (OSError, UnicodeError, ValueError) as error:
         project_id = None
         checks.append(ValidationCheck("project_brief", False, str(error)))
+    wip_limit = 1
     try:
         plan = _read_text(artifact_root / "MASTER_PLAN.md", "MASTER_PLAN")
         required = {
-            "WIP limit": "1",
             "Fix cap": "3",
             "Reports path": ".biexce/reports",
             "Git/deploy": "forbidden",
         }
+        wip_text = _field(plan, "WIP limit")
+        try:
+            wip_limit = int(wip_text or "")
+        except ValueError as error:
+            raise ValueError("MASTER_PLAN WIP limit must be an integer.") from error
+        if not 1 <= wip_limit <= 4:
+            raise ValueError("MASTER_PLAN WIP limit must be between 1 and 4.")
         for label, expected in required.items():
             if (_field(plan, label) or "").lower() != expected.lower():
                 raise ValueError(f"MASTER_PLAN requires '{label}: {expected}'.")
@@ -213,9 +243,9 @@ def _project_artifact_checks(project: Path) -> list[ValidationCheck]:
     task_files = sorted(task_root.glob("t-*.md")) if task_root.is_dir() else []
     tasks: dict[str, dict[str, object]] = {}
     task_errors: list[str] = []
-    if not 3 <= len(task_files) <= 5:
+    if not 1 <= len(task_files) <= 50:
         task_errors.append(
-            f"Fixture must contain 3-5 task files; found {len(task_files)}."
+            f"Plan must contain 1-50 task files; found {len(task_files)}."
         )
     for path in task_files:
         if not TASK_ID_PATTERN.fullmatch(path.stem):
@@ -227,6 +257,9 @@ def _project_artifact_checks(project: Path) -> list[ValidationCheck]:
             tasks[path.stem] = task
     task_errors.extend(_dependency_errors(tasks))
     plan_ids = set(re.findall(r"(?m)^-\s+(t-[0-9]{3})\b", plan))
+    plan_ids.update(
+        re.findall(r"(?m)^\|\s*(t-[0-9]{3})\s*\|", plan)
+    )
     if plan and plan_ids != set(tasks):
         task_errors.append(
             "MASTER_PLAN task IDs do not match task files; "
@@ -307,15 +340,17 @@ def _project_artifact_checks(project: Path) -> list[ValidationCheck]:
                 state_errors.append(f"{item['id']}: state agent is invalid.")
         if len(state_ids) != len(set(state_ids)) or set(state_ids) != set(tasks):
             state_errors.append("PROJECT_STATE task IDs differ from task files.")
-        if active > 1:
-            state_errors.append("PROJECT_STATE violates WIP=1.")
+        if active > wip_limit:
+            state_errors.append(
+                f"PROJECT_STATE active task count {active} exceeds WIP={wip_limit}."
+            )
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError, KeyError) as error:
         state_errors.append(str(error))
     checks.append(
         ValidationCheck(
             "project_state",
             not state_errors,
-            "PROJECT_STATE matches tasks, WIP=1, fix cap<=3"
+            f"PROJECT_STATE matches tasks, WIP<={wip_limit}, fix cap<=3"
             if not state_errors
             else " | ".join(state_errors),
         )

@@ -40,3 +40,15 @@ Finding format: `[Blocker|Major|Minor] <file:line> — <bằng chứng> — <tá
 Verdict: `APPROVE` | `APPROVE WITH MINOR NOTES` | `CHANGES REQUIRED`
 (Blocker hoặc criterion không đạt ⇒ luôn CHANGES REQUIRED).
 Director quy ước: CHANGES REQUIRED tính là một vòng fix của task.
+
+## C. Xử lý review có kiểm chứng
+
+- Reviewer phải nhận objective, task contract, diff/base và evidence chính xác; không
+  review từ bản tóm tắt mơ hồ.
+- Agent nhận finding phải kiểm tra lại file/dòng và reproduction trước khi sửa. Finding
+  đúng thì sửa root cause; finding sai hoặc xung đột requirement thì phản hồi bằng
+  evidence, không đồng ý mù quáng.
+- Không tranh luận theo thẩm quyền hoặc câu chữ. Kết luận dựa trên source, test và
+  contract hiện tại.
+- Sau patch, chỉ re-review phần bị ảnh hưởng và regression cần thiết; finding cũ không
+  được tự động xem là resolved khi chưa có fresh evidence.

@@ -1,5 +1,5 @@
 ---
-description: Default Biexce coding agent. Daily mode implements clear bounded work directly and routes other intents without delegation. Autopilot mode executes one story file from BX Director exactly within its boundaries.
+description: Triển khai task được giao đúng phạm vi và bổ sung unit test cần thiết. Không tự mở rộng yêu cầu hoặc phân việc tiếp.
 mode: all
 temperature: 0.1
 steps: 32
@@ -13,7 +13,7 @@ permission:
   list: allow
   lsp: allow
   skill: allow
-  edit: ask
+  edit: allow
   external_directory: deny
   bash:
     "*": ask
@@ -113,6 +113,32 @@ no approved plan exists for plan-worthy work, stop and say so.
 
 ## Implementation rules (both modes)
 
+- In Autopilot, never launch a persistent development server or background
+  process (`uvicorn`, `flask run`, `npm run dev`, `Start-Process`, `nohup`, or
+  shell `&`). Prefer an in-process test client. If integration needs a server,
+  use a test-runner-owned lifecycle that always exits and cleans up in
+  `finally`; the runtime rejects unbounded server commands.
+- Run documented verification through `biexce_run_command` in Autopilot. The
+  supervisor owns timeout, cancellation, process-tree cleanup and log limits.
+- After the last code change, inspect `AGENTS.md`, project scripts and the task
+  contract to determine the real quality commands. Run the applicable pipeline
+  in this order: formatter (or formatter check), lint/static analysis,
+  typecheck, focused/unit tests, affected integration/contract tests, then
+  build/package. A category that does not exist is `N/A` with a reason; never
+  invent a command. If a required command cannot run because of the
+  environment, report the exact blocker instead of claiming completion.
+- If an applicable check fails because of the current implementation, diagnose
+  it from stdout/stderr, make only the task-scoped correction, and rerun the
+  failed check plus any later affected checks. Do not disable, delete or weaken
+  a failing test to obtain a green result. BX Test still performs the official
+  independent verification after handoff.
+- In Autopilot `standard`/`fast`, an explicit `STANDARD RUNTIME REPAIR
+  AUTHORITY` block in the scheduled job is a runtime-authorized scope extension,
+  not hidden scope expansion. Use it only for the smallest in-project source or
+  test update proven necessary by deterministic task evidence. Updating a stale
+  expectation directly superseded by approved acceptance is allowed only when
+  equivalent still-valid coverage is preserved; deleting, skipping, disabling,
+  or broadly weakening a test remains prohibited.
 - Smallest coherent diff; match the codebase's style, naming, idioms.
 - Inspect with `read`/`glob`/`grep`; change with `edit`/`write`; let the
   native permission policy handle approvals - never re-ask in chat.

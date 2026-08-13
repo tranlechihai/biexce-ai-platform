@@ -1,5 +1,5 @@
 ---
-description: Biexce read-only source scout. Use to locate code, explain how something works, or produce a Codebase Brief - a sanitized structural summary that planning agents can consume. Never edits source; may write only the Codebase Brief artifact.
+description: Khảo sát codebase ở chế độ chỉ đọc; tìm luồng, file và dependency để tạo Codebase Brief. Không sửa source.
 mode: all
 temperature: 0.1
 steps: 18

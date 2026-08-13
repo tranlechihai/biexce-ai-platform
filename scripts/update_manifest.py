@@ -25,6 +25,16 @@ DEFAULT_FIELDS = ('default_agent', 'subagent_depth', 'share', 'autoupdate')
 MODEL_FIELDS = ('model', 'small_model', 'variant')
 RUNTIME_FILES = (
     ('biexce-control-plugin', 'plugins/biexce-control.js'),
+    ('biexce-failure-policy-runtime', 'runtime/failure-policy.js'),
+    ('biexce-scope-policy-runtime', 'runtime/scope-policy.js'),
+    ('biexce-job-board-runtime', 'runtime/job-board.js'),
+    ('biexce-observability-runtime', 'runtime/observability.js'),
+    ('biexce-reconciler-runtime', 'runtime/reconciler.js'),
+    ('biexce-resilience-runtime', 'runtime/resilience.js'),
+    ('biexce-scheduler-runtime', 'runtime/scheduler.js'),
+    ('biexce-session-registry-runtime', 'runtime/session-registry.js'),
+    ('biexce-supervisor-runtime', 'runtime/supervisor.js'),
+    ('biexce-workflow-policy-runtime', 'runtime/workflow-policy.js'),
 )
 
 

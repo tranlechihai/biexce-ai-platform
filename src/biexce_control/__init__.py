@@ -22,6 +22,8 @@ from .workflow import (
     approve_gate,
     initialize_workflow,
     load_workflow,
+    recovery_path_for,
+    resolve_blocked_workflow,
     workflow_path_for,
 )
 
@@ -47,5 +49,7 @@ __all__ = (
     "approve_gate",
     "initialize_workflow",
     "load_workflow",
+    "recovery_path_for",
+    "resolve_blocked_workflow",
     "workflow_path_for",
 )

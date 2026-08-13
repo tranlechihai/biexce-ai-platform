@@ -1,0 +1,12 @@
+{
+  "phase": "CODE",
+  "revision": 3,
+  "current_task_id": "t-001",
+  "fix_round": 0,
+  "gate_1": "APPROVED",
+  "gate_2": "PENDING",
+  "last_agent": "bx-review",
+  "last_result": "PASS",
+  "blocked_reason": null,
+  "updated_at_utc": "2026-08-03T08:00:00Z"
+}

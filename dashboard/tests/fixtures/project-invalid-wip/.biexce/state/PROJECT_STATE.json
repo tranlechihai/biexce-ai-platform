@@ -1,0 +1,21 @@
+{
+  "project": "bad",
+  "stage": "B3",
+  "updated": "2026-08-03T08:00:00Z",
+  "tasks": [
+    {
+      "id": "t-001",
+      "title": "first",
+      "status": "coding",
+      "round": 0,
+      "agent": "bx-code"
+    },
+    {
+      "id": "t-002",
+      "title": "second",
+      "status": "testing",
+      "round": 0,
+      "agent": "bx-test"
+    }
+  ]
+}

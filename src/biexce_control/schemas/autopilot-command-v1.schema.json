@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/control-plane/autopilot-command-v1.schema.json",
+  "title": "BIEXCE Runtime Command v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "project_root", "command", "reason",
+    "requested_by", "requested_at_utc", "workflow_revision", "task_id"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://schemas.biexce.local/control-plane/autopilot-command-v1.schema.json"
+    },
+    "schema_version": { "const": 1 },
+    "project_root": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "command": { "const": "RECOVER_MANUAL_FIX" },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "requested_by": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "requested_at_utc": { "type": "string", "format": "date-time", "maxLength": 64 },
+    "workflow_revision": { "type": "integer", "minimum": 1 },
+    "task_id": { "type": "string", "pattern": "^t-[0-9]{3}$" }
+  }
+}

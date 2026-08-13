@@ -25,13 +25,30 @@ Dùng trước triển khai cho thay đổi nhiều rủi ro/boundary, và trư�
 6. Định nghĩa entry condition, commands, expected artifacts, pass/fail/inconclusive và exit gate.
 7. Ghi phần manual/exploratory không tự động hóa được, owner và lý do.
 8. Duy trì trace table `criterion -> test -> evidence`; triage failure thành patch/pre-existing/environment/missing-dependency/infra-unavailable.
+9. Chốt quality pipeline dùng command hiện hữu theo thứ tự format check,
+   lint/static, typecheck, unit/focused, integration/contract/E2E và
+   build/package. Mỗi gate phải là command thật hoặc `N/A` có lý do; thiếu môi
+   trường để chạy gate đang tồn tại dẫn đến `INCONCLUSIVE`.
+
+## Deterministic command catalog
+
+Catalog này là nguồn lệnh được BIEXCE kiểm soát, dùng khi stack/framework đã
+được Brief, AGENTS.md hoặc manifest khai báo rõ nhưng project greenfield chưa
+có script wrapper. Không suy đoán framework chỉ từ tên file.
+
+- Python standard library + `unittest`, có `tests/test*.py`:
+  `python -m unittest discover -s tests -v`.
+- Nếu repo đã có script/package command riêng, command của repo luôn ưu tiên
+  hơn catalog.
+- `Verify` của task code không được là `N/A`. Category không áp dụng trong
+  quality pipeline vẫn có thể là `N/A — <lý do>`.
 
 Ví dụ ngắn:
 
 ```text
 Risk: installer bỏ sót skill mới.
 Unit: manifest path/hash.
-Integration: install vào temp target rồi verify 7 agents + 50 skills.
+Integration: install vào temp target rồi verify 7 agents + 59 skills.
 Runtime: OpenCode debug agents/skills.
 Gate: static + Windows/Linux integration PASS; runtime thiếu CLI => INCONCLUSIVE.
 ```

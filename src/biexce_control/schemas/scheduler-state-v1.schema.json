@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biexce.local/runtime/scheduler-state-v1.schema.json",
+  "title": "BIEXCE Runtime Scheduler State v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "project_root",
+    "revision",
+    "wip_limit",
+    "local_concurrency",
+    "cloud_concurrency",
+    "read_only_concurrency",
+    "tasks",
+    "updated_at_utc"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://schemas.biexce.local/runtime/scheduler-state-v1.schema.json"
+    },
+    "schema_version": { "const": 1 },
+    "project_root": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "wip_limit": { "type": "integer", "minimum": 1, "maximum": 4 },
+    "local_concurrency": { "type": "integer", "minimum": 1, "maximum": 8 },
+    "cloud_concurrency": { "type": "integer", "minimum": 1, "maximum": 16 },
+    "read_only_concurrency": { "type": "integer", "minimum": 1, "maximum": 16 },
+    "tasks": {
+      "type": "object",
+      "propertyNames": { "pattern": "^t-[0-9]{3}$" },
+      "additionalProperties": { "$ref": "#/$defs/task" }
+    },
+    "updated_at_utc": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "title",
+        "phase",
+        "status",
+        "dependencies",
+        "read_scope",
+        "write_scope",
+        "fix_round",
+        "active_job_id",
+        "last_job_id",
+        "agent",
+        "model",
+        "last_result",
+        "error",
+        "updated_at_utc"
+      ],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^t-[0-9]{3}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "phase": {
+          "enum": ["CODE", "TEST", "FIX", "TASK_REVIEW", "DONE", "BLOCKED"]
+        },
+        "status": {
+          "enum": ["BACKLOG", "READY", "RUNNING", "DONE", "BLOCKED"]
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^t-[0-9]{3}$" }
+        },
+        "read_scope": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "write_scope": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "fix_round": { "type": "integer", "minimum": 0 },
+        "active_job_id": { "$ref": "#/$defs/nullableString" },
+        "last_job_id": { "$ref": "#/$defs/nullableString" },
+        "agent": { "$ref": "#/$defs/nullableString" },
+        "model": { "$ref": "#/$defs/nullableString" },
+        "last_result": { "$ref": "#/$defs/nullableString" },
+        "error": { "$ref": "#/$defs/nullableString" },
+        "updated_at_utc": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

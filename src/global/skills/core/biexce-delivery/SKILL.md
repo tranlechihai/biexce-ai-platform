@@ -37,13 +37,38 @@ SOP 5 bước, artifact là nguồn sự thật (`.biexce/`):
 |---|---|---|---|
 | B1 Kickoff | director | PROJECT_BRIEF.md | — |
 | B2 Plan | bx-plan (+bx-explore Brief; bx-review red-team) | MASTER_PLAN.md + tasks/t-NNN.md | **GATE 1: người duyệt plan** |
-| B3 Execute | director điều phối code→test→(fix≤3)→review từng task, TUẦN TỰ (WIP=1 baseline) | code + reports/ | — |
+| B3 Execute | runtime scheduler điều phối code→test→(fix≤3)→review theo DAG; read-only work có thể song song, CODE/FIX dùng chung working tree phải serialize | code + reports/ | — |
 | B4 Integrate | bx-test regression + bx-review tổng | INTEGRATION_REPORT.md | — |
 | B5 Handover | director | FINAL_REPORT.md | **GATE 2: người nghiệm thu** |
 
-Kỷ luật B3: story file là toàn bộ phạm vi của dev; trần 3 vòng fix rồi
-escalate; mọi chuyển trạng thái phát `state-beacon`; director re-drive task
-treo thay vì bỏ qua.
+Sau B1, Director gọi `biexce_drive`; runtime tự điều phối Explore, Plan và Plan
+Review, chạy Gate 1 preflight rồi dừng để human duyệt. Sau approval, gọi lại
+driver để tiếp tục B3–B5. Không dispatch thủ công specialist khi driver còn
+khả dụng.
+
+Kỷ luật B3: story file là toàn bộ phạm vi của dev; scheduler chỉ chạy task đã
+sẵn sàng, không xung đột write scope và không vượt WIP/model quota; trần 3
+vòng fix rồi escalate; mọi chuyển trạng thái phát `state-beacon`.
+
+Khi task bị `BLOCKED` do đạt trần fix, không chạy vòng thứ tư, không sửa state
+và không tự đánh dấu done. Nếu human duyệt một fix giới hạn, chỉ mở lại bằng
+`biexce autopilot resolve --project "<root>" --action manual-fix --reason
+"<phạm vi đã duyệt>"`. CLI chỉ xếp runtime command; runtime phải xác thực, ghi
+audit và chuyển đúng `BLOCKED → FIX`. Sau đó vẫn bắt buộc bx-test và bx-review.
+Nếu thất bại lại thì block lại.
+
+### Kết quả có cấu trúc trong Autopilot
+
+Child agent nên gọi `biexce_submit_result` một lần trước khi trả lời. Runtime
+chuẩn hóa metadata báo cáo không nhạy cảm, nhưng vẫn chặn stale identity, PASS
+thiếu evidence và write-scope drift. Nếu tool
+không khả dụng, runtime tự hoàn tất từ artifact, filesystem diff, evidence của
+`biexce_run_command` và dòng cuối `BIEXCE_STATUS: <status>`. Mọi file thay đổi
+vẫn phải nằm trong writable scope. `PASS` bắt buộc có ít nhất một managed check
+với `status=PASS` và `exit_code=0`. Payload sai schema hoặc gửi trễ bị từ chối;
+chat narrative không thể ghi đè filesystem hay managed evidence. TEST trả
+`INCONCLUSIVE` được retry đúng một lần mà không tăng fix round; lần thứ hai mới
+block task.
 
 ## Hoàn thành (mọi chế độ)
 
