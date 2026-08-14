@@ -122,7 +122,7 @@ class Step3PolicyTests(GeneratorTestCase):
         import subprocess
 
         completed = subprocess.run(
-            ["node", "--test", "--test-isolation=none"],
+            ["node", "test/run.mjs"],
             cwd=NODE_FIXTURE,
             capture_output=True,
             encoding="utf-8",

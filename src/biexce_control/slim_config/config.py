@@ -114,12 +114,22 @@ def opencode_document(
     base_opencode_path: Path,
 ) -> dict[str, Any]:
     source = read_json(base_opencode_path)
-    source.pop("agent", None)
+    configured_agents = source.get("agent")
+    source["agent"] = {
+        name: definition
+        for name, definition in (
+            configured_agents.items()
+            if isinstance(configured_agents, dict)
+            else ()
+        )
+        if isinstance(definition, dict) and definition.get("disable") is True
+    }
     for server in source.get("mcp", {}).values():
         if isinstance(server, dict):
             server["enabled"] = False
     source["plugin"] = [
         f"{compatibility['slim']['package']}@{compatibility['slim']['version']}",
+        "./plugins/biexce-role-access.js",
         "./plugins/biexce-recovery.js",
     ]
     source["default_agent"] = "orchestrator"

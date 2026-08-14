@@ -30,16 +30,19 @@ class GeneratorContractTests(GeneratorTestCase):
             output = self.build(root)
             opencode = read_json(output / "opencode.json")
             package = read_json(output / "package.json")
-            self.assertEqual(
-                [
-                    "oh-my-opencode-slim@2.2.13",
-                    "./plugins/biexce-recovery.js",
-                ],
-                opencode["plugin"],
-            )
+            expected_plugins = [
+                "oh-my-opencode-slim@2.2.13",
+                "./plugins/biexce-role-access.js",
+                "./plugins/biexce-recovery.js",
+            ]
+            self.assertEqual(expected_plugins, opencode["plugin"])
             self.assertEqual("orchestrator", opencode["default_agent"])
             self.assertFalse(opencode["autoupdate"])
-            self.assertNotIn("agent", opencode)
+            disabled = {"build", "plan", "general", "explore", "scout"}
+            self.assertEqual(disabled, set(opencode["agent"]))
+            self.assertTrue(
+                all(item["disable"] for item in opencode["agent"].values())
+            )
             self.assertEqual("ask", opencode["permission"]["external_directory"])
             self.assertEqual("ask", opencode["permission"]["edit"])
             self.assertEqual("ask", opencode["permission"]["task"])

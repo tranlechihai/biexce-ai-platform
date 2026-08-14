@@ -68,6 +68,7 @@ def inspect_generated_config(config_dir: str | Path) -> dict[str, object]:
 
     expected_plugin = [
         f"{compatibility['slim']['package']}@{compatibility['slim']['version']}",
+        "./plugins/biexce-role-access.js",
         "./plugins/biexce-recovery.js",
     ]
     checks.append(
@@ -97,6 +98,13 @@ def inspect_generated_config(config_dir: str | Path) -> dict[str, object]:
         and (root / "runtime" / "recovery-core.js").is_file()
     )
     checks.append(_check("recovery", recovery_ok, "native session recovery bridge"))
+    access_ok = (
+        (root / "plugins" / "biexce-role-access.js").is_file()
+        and (root / "runtime" / "role-access.js").is_file()
+    )
+    checks.append(
+        _check("role_access", access_ok, "seven directly selectable BIEXCE roles")
+    )
     dependencies = package.get("dependencies")
     pins_ok = isinstance(dependencies, dict) and all(
         dependencies.get(name) == version

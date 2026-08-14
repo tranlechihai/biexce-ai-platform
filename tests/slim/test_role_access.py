@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import unittest
+
+from biexce_control.slim_config import doctor
+
+
+ROOT = Path(__file__).resolve().parents[2]
+MODULE = ROOT / "src" / "global" / "slim" / "runtime" / "role-access.js"
+PLUGIN = ROOT / "src" / "global" / "slim" / "plugins" / "biexce-role-access.js"
+
+
+def expose(agent_document: dict) -> dict:
+    node = shutil.which("node")
+    if not node:
+        raise unittest.SkipTest("Node.js is required for role-access tests")
+    script = r"""
+import { pathToFileURL } from "node:url"
+const module = await import(pathToFileURL(process.env.BX_MODULE).href)
+const config = JSON.parse(process.env.BX_AGENTS)
+const result = module.exposeUserFacingRoles(config)
+console.log(JSON.stringify({ config, result }))
+"""
+    completed = subprocess.run(
+        [node, "--input-type=module", "--eval", script],
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+        env=os.environ
+        | {"BX_MODULE": str(MODULE), "BX_AGENTS": json.dumps(agent_document)},
+    )
+    return json.loads(completed.stdout)
+
+
+def apply_plugin(agent_document: dict) -> dict:
+    node = shutil.which("node")
+    if not node:
+        raise unittest.SkipTest("Node.js is required for role-access tests")
+    script = r"""
+import { pathToFileURL } from "node:url"
+const module = await import(pathToFileURL(process.env.BX_PLUGIN).href)
+const config = JSON.parse(process.env.BX_AGENTS)
+const plugin = await module.BiexceRoleAccessPlugin({
+  client: { app: { log: async () => {} } },
+})
+await plugin.config(config)
+console.log(JSON.stringify(config))
+"""
+    completed = subprocess.run(
+        [node, "--input-type=module", "--eval", script],
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+        env=os.environ
+        | {"BX_PLUGIN": str(PLUGIN), "BX_AGENTS": json.dumps(agent_document)},
+    )
+    return json.loads(completed.stdout)
+
+
+class RoleAccessTests(unittest.TestCase):
+    def test_exposes_exact_biexce_roles_without_cloning_director(self):
+        ids = (
+            "orchestrator",
+            "bx-plan",
+            "bx-explore",
+            "bx-code",
+            "bx-fix",
+            "bx-test",
+            "bx-review",
+        )
+        source = {
+            name: {"mode": "subagent", "hidden": True}
+            for name in ids
+        }
+        source["bx-director"] = {
+            "mode": "primary",
+            "displayName": "BX-Director",
+        }
+        result = expose({"agent": source})
+        self.assertTrue(result["result"]["ok"])
+        agents = result["config"]["agent"]
+        self.assertEqual(set(ids), set(agents))
+        self.assertNotIn("bx-director", agents)
+        self.assertEqual("primary", agents["orchestrator"]["mode"])
+        self.assertNotIn("hidden", agents["orchestrator"])
+        for name in ids[1:]:
+            self.assertEqual("all", agents[name]["mode"])
+            self.assertNotIn("hidden", agents[name])
+
+    def test_reports_missing_registration_without_creating_fake_agents(self):
+        result = expose({"agent": {"orchestrator": {"mode": "primary"}}})
+        self.assertFalse(result["result"]["ok"])
+        self.assertEqual({"orchestrator"}, set(result["config"]["agent"]))
+        self.assertEqual(
+            {
+                "bx-plan",
+                "bx-explore",
+                "bx-code",
+                "bx-fix",
+                "bx-test",
+                "bx-review",
+            },
+            set(result["result"]["missing"]),
+        )
+
+    def test_runtime_probe_matches_expected_registry(self):
+        result = doctor.probe_role_access(
+            ROOT / "src" / "global" / "slim"
+        )
+        self.assertTrue(result["ok"], result["detail"])
+
+    def test_plugin_hook_applies_the_registry_transform(self):
+        ids = ("orchestrator", *doctor.EXPECTED_AGENT_MODES.keys())
+        agents = {
+            name: {"mode": "subagent", "hidden": True}
+            for name in set(ids)
+        }
+        agents["bx-director"] = {"mode": "primary"}
+        result = apply_plugin({"agent": agents})["agent"]
+        self.assertNotIn("bx-director", result)
+        self.assertEqual("primary", result["orchestrator"]["mode"])
+        for name in doctor.EXPECTED_AGENT_MODES:
+            self.assertNotIn("hidden", result[name])
+
+
+if __name__ == "__main__":
+    unittest.main()

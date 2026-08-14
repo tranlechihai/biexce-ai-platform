@@ -63,17 +63,23 @@ Slim có parent orchestrator riêng. Mapping ưu tiên là:
 | BIEXCE role | Slim/OpenCode identity | Trách nhiệm |
 |---|---|---|
 | BX Director | `orchestrator`, alias `BX-Director` | Phỏng vấn, điều phối, tổng hợp, gate |
-| BX Explore | custom `bx-explore` | Khảo sát codebase, read-only |
-| BX Plan | custom `bx-plan` | Master Plan và task contracts |
-| BX Code | custom `bx-code` | Implement task |
-| BX Test | custom `bx-test` | Test strategy, test/evidence |
-| BX Fix | custom `bx-fix` | Sửa defect có evidence |
-| BX Review | custom `bx-review` | Plan/task/integration review |
+| BX Explore | custom `bx-explore`, mode `all` | Khảo sát codebase, read-only |
+| BX Plan | custom `bx-plan`, mode `all` | Master Plan và task contracts |
+| BX Code | custom `bx-code`, mode `all` | Implement task |
+| BX Test | custom `bx-test`, mode `all` | Test strategy, test/evidence |
+| BX Fix | custom `bx-fix`, mode `all` | Sửa defect có evidence |
+| BX Review | custom `bx-review`, mode `all` | Plan/task/integration review |
 
 Slim 2.2.13 yêu cầu `displayName` là identifier an toàn, không chứa khoảng
 trắng; vì vậy alias runtime là `BX-Director`, còn nhãn tài liệu vẫn là “BX
 Director”. Không fork/sửa core Slim chỉ để đổi internal ID. CLI giữ mapping
 `bx-director <-> orchestrator`.
+
+Mode `all` cho phép sáu specialist vừa được chọn/gọi trực tiếp bởi user, vừa
+được Orchestrator dispatch làm child. Một bridge cấu hình mỏng chạy sau Slim chỉ
+điều chỉnh mode của registry hiện hữu; không đăng ký bản sao agent và không tạo
+authority thứ hai. Runtime acceptance phải xác nhận không có entry legacy
+`bx-director` cạnh `orchestrator`.
 
 Các built-in agent Slim không dùng phải được disable hoặc không đưa vào routing
 prompt để tránh hai hệ agent cạnh tranh nhau.

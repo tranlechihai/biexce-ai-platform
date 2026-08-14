@@ -135,8 +135,8 @@ EXPECTED_PROMPTS = {
     "bx-review.md",
 }
 
-EXPECTED_PLUGINS = {"biexce-recovery.js"}
-EXPECTED_RUNTIME = {"recovery-core.js"}
+EXPECTED_PLUGINS = {"biexce-recovery.js", "biexce-role-access.js"}
+EXPECTED_RUNTIME = {"recovery-core.js", "role-access.js"}
 EXPECTED_COMMANDS = {"bx-auto.md"}
 EXPECTED_TEMPLATES = {
     "PROJECT_BRIEF.md",

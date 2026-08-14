@@ -27,6 +27,7 @@ class SlimServiceTests(GeneratorTestCase):
             self.assertTrue(checks["command"]["ok"])
             self.assertTrue(checks["templates"]["ok"])
             self.assertTrue(checks["recovery"]["ok"])
+            self.assertTrue(checks["role_access"]["ok"])
             self.assertFalse(checks["dependencies"]["ok"])
 
     def test_inspection_fails_when_workflow_command_is_missing(self):
