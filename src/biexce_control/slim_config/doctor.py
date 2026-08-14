@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 
 from .jsonio import read_json
@@ -13,7 +12,7 @@ from .service import inspect_generated_config
 
 
 EXPECTED_AGENT_MODES = {
-    "orchestrator": "primary",
+    "bx-director": "primary",
     "bx-plan": "all",
     "bx-explore": "all",
     "bx-code": "all",
@@ -21,17 +20,6 @@ EXPECTED_AGENT_MODES = {
     "bx-test": "all",
     "bx-review": "all",
 }
-ROLE_PROBE = r"""
-import { pathToFileURL } from "node:url"
-const bridge = await import(pathToFileURL(process.argv[1]).href)
-const ids = ["orchestrator", "bx-plan", "bx-explore", "bx-code",
-  "bx-fix", "bx-test", "bx-review"]
-const agent = Object.fromEntries(ids.map((id) => [id,
-  { mode: "subagent", hidden: true }]))
-agent["bx-director"] = { mode: "primary", displayName: "BX-Director" }
-const result = bridge.exposeUserFacingRoles({ agent })
-console.log(JSON.stringify({ result, agent }))
-"""
 
 
 def _binary(root: Path, name: str) -> Path:
@@ -46,11 +34,19 @@ def _opencode_launcher(root: Path) -> Path:
 
 def _run(binary: Path, arguments: list[str], root: Path) -> subprocess.CompletedProcess:
     command = [str(binary), *arguments]
+    xdg_roots = {
+        "XDG_CONFIG_HOME": root / ".xdg-config",
+        "XDG_CACHE_HOME": root / ".xdg-cache",
+        "XDG_DATA_HOME": root / ".xdg-data",
+        "XDG_STATE_HOME": root / ".xdg-state",
+    }
+    for directory in xdg_roots.values():
+        directory.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     environment.update(
         {
             "OPENCODE_CONFIG_DIR": str(root),
-            "XDG_CONFIG_HOME": str(root / ".xdg-config"),
+            **{name: str(path) for name, path in xdg_roots.items()},
             "OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS": "true",
             "OPENCODE_DISABLE_PROJECT_CONFIG": "1",
             "OPENCODE_DISABLE_EXTERNAL_SKILLS": "1",
@@ -74,39 +70,46 @@ def _run(binary: Path, arguments: list[str], root: Path) -> subprocess.Completed
     )
 
 
-def probe_role_access(root: Path) -> dict[str, object]:
-    node = shutil.which("node")
-    if not node:
-        return {"name": "agent_registry", "ok": False, "detail": "Node.js missing"}
-    bridge = root / "runtime" / "role-access.js"
+def _debug_agent(root: Path, agent_id: str) -> tuple[dict, str]:
     completed = _run(
-        Path(node),
-        ["--input-type=module", "--eval", ROLE_PROBE, str(bridge)],
+        _opencode_launcher(root),
+        ["debug", "agent", agent_id],
         root,
     )
     try:
         payload = json.loads(completed.stdout)
     except json.JSONDecodeError:
         payload = {}
-    agents = payload.get("agent") if isinstance(payload, dict) else None
-    registry_ok = (
-        completed.returncode == 0
-        and payload.get("result", {}).get("ok") is True
-        and isinstance(agents, dict)
-        and set(agents) == set(EXPECTED_AGENT_MODES)
-        and all(
-            agents[name].get("mode") == mode
-            and agents[name].get("hidden") is not True
-            for name, mode in EXPECTED_AGENT_MODES.items()
-        )
-    )
+    detail = completed.stderr.strip() or completed.stdout.strip()
+    return payload if completed.returncode == 0 else {}, detail
+
+
+def probe_role_access(root: Path) -> dict[str, object]:
+    failures: list[str] = []
+    for agent_id, expected_mode in EXPECTED_AGENT_MODES.items():
+        document, detail = _debug_agent(root, agent_id)
+        if (
+            document.get("name") != agent_id
+            or document.get("mode") != expected_mode
+            or document.get("hidden") is True
+        ):
+            failures.append(f"{agent_id}: {detail or 'not registered'}")
+
+    internal, detail = _debug_agent(root, "orchestrator")
+    if not (
+        internal.get("name") == "orchestrator"
+        and internal.get("mode") == "subagent"
+        and internal.get("hidden") is True
+    ):
+        failures.append(f"orchestrator: {detail or 'not hidden'}")
+
     return {
         "name": "agent_registry",
-        "ok": registry_ok,
+        "ok": not failures,
         "detail": (
-            "one visible BX-Director and six selectable specialists"
-            if registry_ok
-            else completed.stderr.strip() or "role access probe failed"
+            "exactly seven visible BIEXCE roles; internal orchestrator hidden"
+            if not failures
+            else " | ".join(failures)
         ),
     }
 

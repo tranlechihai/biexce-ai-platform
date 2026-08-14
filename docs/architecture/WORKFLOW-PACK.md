@@ -28,7 +28,7 @@ Trong OpenCode/OpenChamber đã nạp config Slim, user chạy:
 /bx-auto <mục tiêu cụ thể>
 ```
 
-Command được cố định chạy bằng `orchestrator`, alias hiển thị là `BX-Director`.
+Command dùng parent nội bộ `orchestrator`; alias user-facing là `bx-director`.
 Director dùng native TODO/session của OpenCode và background agents của Slim. Nó
 không tạo scheduler, WIP counter, lock, lease hoặc workflow-state JSON riêng.
 

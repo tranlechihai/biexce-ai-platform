@@ -67,7 +67,7 @@ def inspect_generated_config(config_dir: str | Path) -> dict[str, object]:
         }
 
     expected_plugin = [
-        f"{compatibility['slim']['package']}@{compatibility['slim']['version']}",
+        "./node_modules/oh-my-opencode-slim/dist/index.js",
         "./plugins/biexce-role-access.js",
         "./plugins/biexce-recovery.js",
     ]

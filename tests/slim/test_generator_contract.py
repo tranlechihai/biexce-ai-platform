@@ -1,6 +1,7 @@
 from __future__ import annotations
 from support import GeneratorTestCase, SLIM_SOURCE, read_json, temporary_directory
 
+
 class GeneratorContractTests(GeneratorTestCase):
     def test_pin_and_source_baseline_are_explicit(self):
         compatibility = read_json(SLIM_SOURCE / "compatibility.json")
@@ -31,18 +32,16 @@ class GeneratorContractTests(GeneratorTestCase):
             opencode = read_json(output / "opencode.json")
             package = read_json(output / "package.json")
             expected_plugins = [
-                "oh-my-opencode-slim@2.2.13",
+                "./node_modules/oh-my-opencode-slim/dist/index.js",
                 "./plugins/biexce-role-access.js",
                 "./plugins/biexce-recovery.js",
             ]
             self.assertEqual(expected_plugins, opencode["plugin"])
-            self.assertEqual("orchestrator", opencode["default_agent"])
+            self.assertEqual("bx-director", opencode["default_agent"])
             self.assertFalse(opencode["autoupdate"])
             disabled = {"build", "plan", "general", "explore", "scout"}
             self.assertEqual(disabled, set(opencode["agent"]))
-            self.assertTrue(
-                all(item["disable"] for item in opencode["agent"].values())
-            )
+            self.assertTrue(all(item["disable"] for item in opencode["agent"].values()))
             self.assertEqual("ask", opencode["permission"]["external_directory"])
             self.assertEqual("ask", opencode["permission"]["edit"])
             self.assertEqual("ask", opencode["permission"]["task"])
@@ -88,10 +87,11 @@ class GeneratorContractTests(GeneratorTestCase):
                 },
                 set(agents),
             )
-            self.assertEqual("BX-Director", agents["orchestrator"]["displayName"])
-            display_names = [agent["displayName"] for agent in agents.values()]
-            self.assertEqual(len(display_names), len(set(display_names)))
-            self.assertTrue(all(" " not in name for name in display_names))
+            self.assertEqual("bx-director", agents["orchestrator"]["displayName"])
+            specialists = (
+                definition for name, definition in agents.items() if name != "orchestrator"
+            )
+            self.assertTrue(all("displayName" not in item for item in specialists))
             from support import prototype
 
             for role, slim_id in prototype.SLIM_IDS.items():

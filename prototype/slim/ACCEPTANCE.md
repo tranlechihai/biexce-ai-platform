@@ -9,7 +9,7 @@ OpenChamber; PASS tĩnh không bao giờ thay thế evidence live.
 | ID | Yêu cầu |
 |---|---|
 | O1 | Pin package, commit, integrity, schema SHA-256 của Slim và compatibility OpenCode SDK; tắt auto-update. |
-| O2 | Registry có đúng một Director: internal ID `orchestrator`, alias `BX-Director`; sáu specialist là mode `all`, không có entry legacy `bx-director`. |
+| O2 | Registry có đúng bảy role user-facing: alias `bx-director` là primary; sáu specialist `bx-*` là mode `all`; raw `orchestrator` là subagent ẩn. |
 | O3 | Mỗi role giữ đúng model `provider/model` do user chọn. |
 | O4 | Effective permission cho parent chạy background task, cấm specialist tự delegate, bảo vệ path ngoài project và chặn edit/bash mutation của role read-only. BX Test dùng ownership + review để giới hạn source vì test path phụ thuộc framework. |
 | O5 | Mỗi role có allowlist 2-5 skill rõ ràng; không role nào nhận toàn bộ catalog. |

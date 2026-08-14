@@ -24,29 +24,29 @@ bridge nằm trong `src/global/slim/`. Generator production nằm trong
 `src/biexce_control/slim_config/`; prototype không giữ bản asset hay generator
 thứ hai.
 
-Runtime chỉ có một parent `orchestrator` với alias `BX-Director` và sáu custom
+Runtime chỉ có một parent `orchestrator` với alias `bx-director` và sáu custom
 specialist. `bx-director` vẫn là tên role ở CLI/routing, nhưng được map sang
 `orchestrator`; không tạo hai Director cạnh tranh.
 
 Bridge `biexce-role-access` chạy sau Slim và đặt sáu specialist ở mode `all`.
 Vì vậy mỗi specialist vừa xuất hiện trong agent selector để user dùng trực
 tiếp, vừa được Director gọi làm background child. Bridge chỉ đổi mode của bảy
-entry Slim đã đăng ký; nó không clone agent, không tạo `bx-director` thứ hai và
+entry Slim đã đăng ký; nó không clone agent cạnh tranh và
 không thay model do user chọn.
 
-Slim 2.2.13 sinh thêm alias hiển thị cho `displayName` và ẩn raw ID. Bridge
-chuẩn hóa registry sau bước này: bỏ alias `bx-director` dư, mở hiển thị
-`orchestrator` với tên `BX-Director`, và mở hiển thị sáu specialist. Vì
-vậy dropdown chỉ có đúng bảy role, không có hai Director.
+Slim 2.2.13 sinh alias `bx-director` từ `displayName` và ẩn raw ID
+`orchestrator`. Bridge giữ alias làm primary, giữ raw ID ở mode subagent ẩn,
+và mở hiển thị sáu specialist. Specialist dùng ID `bx-*` trực tiếp nên không
+có alias kép. Dropdown vì vậy chỉ có đúng bảy role user-facing.
 
 Sau khi cài dependency trong output cô lập, `biexce slim doctor` kiểm tra
 bridge registry. Nghiệm thu giao diện phải mở TUI/OpenChamber và xác nhận
-dropdown có đúng `BX-Director`, `BX-Plan`, `BX-Explore`, `BX-Code`, `BX-Fix`,
-`BX-Test`, `BX-Review`. Lệnh `opencode agent list` không được dùng làm
-evidence plugin vì CLI này chỉ liệt kê agent tĩnh trước khi plugin đăng ký.
+dropdown có đúng `Bx-director`, `Bx-plan`, `Bx-explore`, `Bx-code`, `Bx-fix`,
+`Bx-test`, `Bx-review`. Doctor kiểm tra registry thật bằng
+`opencode debug agent`; không còn dùng object mô phỏng để tự báo PASS.
 
-`orchestrator` là ID nội bộ duy nhất của BX-Director; `BX-Director` là tên
-hiển thị. Specialist có thể được chọn trong UI, gọi bằng `@bx-code`
+`orchestrator` là ID nội bộ của BX-Director; `bx-director` là alias user-facing.
+Specialist có thể được chọn trong UI, gọi bằng `@bx-code`
 hoặc chạy trực tiếp bằng `opencode run --agent bx-code ...`.
 
 Mỗi output sinh hai launcher `bin/biexce-opencode` và

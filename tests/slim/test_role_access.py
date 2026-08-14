@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import unittest
+from unittest import mock
 
 from biexce_control.slim_config import doctor
 
@@ -63,7 +64,7 @@ console.log(JSON.stringify(config))
 
 
 class RoleAccessTests(unittest.TestCase):
-    def test_exposes_exact_biexce_roles_without_cloning_director(self):
+    def test_exposes_alias_and_hides_internal_orchestrator(self):
         ids = (
             "orchestrator",
             "bx-plan",
@@ -77,17 +78,20 @@ class RoleAccessTests(unittest.TestCase):
             name: {"mode": "subagent", "hidden": True}
             for name in ids
         }
-        source["bx-director"] = {
+        source["BX-Director"] = {
             "mode": "primary",
             "displayName": "BX-Director",
         }
+        source["BX-Code"] = dict(source["bx-code"])
         result = expose({"agent": source})
         self.assertTrue(result["result"]["ok"])
         agents = result["config"]["agent"]
-        self.assertEqual(set(ids), set(agents))
-        self.assertNotIn("bx-director", agents)
-        self.assertEqual("primary", agents["orchestrator"]["mode"])
-        self.assertNotIn("hidden", agents["orchestrator"])
+        self.assertEqual({*ids, "bx-director"}, set(agents))
+        self.assertEqual("bx-director", result["config"]["default_agent"])
+        self.assertEqual("primary", agents["bx-director"]["mode"])
+        self.assertNotIn("hidden", agents["bx-director"])
+        self.assertEqual("subagent", agents["orchestrator"]["mode"])
+        self.assertTrue(agents["orchestrator"]["hidden"])
         for name in ids[1:]:
             self.assertEqual("all", agents[name]["mode"])
             self.assertNotIn("hidden", agents[name])
@@ -98,6 +102,7 @@ class RoleAccessTests(unittest.TestCase):
         self.assertEqual({"orchestrator"}, set(result["config"]["agent"]))
         self.assertEqual(
             {
+                "bx-director",
                 "bx-plan",
                 "bx-explore",
                 "bx-code",
@@ -108,10 +113,21 @@ class RoleAccessTests(unittest.TestCase):
             set(result["result"]["missing"]),
         )
 
-    def test_runtime_probe_matches_expected_registry(self):
-        result = doctor.probe_role_access(
-            ROOT / "src" / "global" / "slim"
-        )
+    def test_runtime_probe_requires_real_visible_registry(self):
+        def fake_debug(_root, agent_id):
+            if agent_id == "orchestrator":
+                return {
+                    "name": agent_id,
+                    "mode": "subagent",
+                    "hidden": True,
+                }, ""
+            return {
+                "name": agent_id,
+                "mode": doctor.EXPECTED_AGENT_MODES[agent_id],
+            }, ""
+
+        with mock.patch.object(doctor, "_debug_agent", side_effect=fake_debug):
+            result = doctor.probe_role_access(ROOT)
         self.assertTrue(result["ok"], result["detail"])
 
     def test_plugin_hook_applies_the_registry_transform(self):
@@ -120,10 +136,9 @@ class RoleAccessTests(unittest.TestCase):
             name: {"mode": "subagent", "hidden": True}
             for name in set(ids)
         }
-        agents["bx-director"] = {"mode": "primary"}
         result = apply_plugin({"agent": agents})["agent"]
-        self.assertNotIn("bx-director", result)
-        self.assertEqual("primary", result["orchestrator"]["mode"])
+        self.assertEqual("primary", result["bx-director"]["mode"])
+        self.assertTrue(result["orchestrator"]["hidden"])
         for name in doctor.EXPECTED_AGENT_MODES:
             self.assertNotIn("hidden", result[name])
 

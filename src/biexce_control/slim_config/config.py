@@ -8,7 +8,6 @@ from typing import Any
 
 from .catalog import (
     DESCRIPTIONS,
-    DISPLAY_NAMES,
     ROLE_ORDER,
     ROUTING_BLOCKS,
     SKILLS,
@@ -66,13 +65,14 @@ def slim_document(models: dict[str, str]) -> dict[str, Any]:
         slim_id = SLIM_IDS[role]
         definition: dict[str, Any] = {
             "model": models[role],
-            "displayName": DISPLAY_NAMES[role],
             "temperature": 0.1,
             "skills": list(SKILLS[role]),
             "mcps": [],
             "permission": role_permission(role),
         }
-        if role != "bx-director":
+        if role == "bx-director":
+            definition["displayName"] = role
+        else:
             definition["description"] = DESCRIPTIONS[role]
             definition["orchestratorPrompt"] = (
                 f"@{slim_id}\n- Role: {ROUTING_BLOCKS[role]}"
@@ -128,11 +128,11 @@ def opencode_document(
         if isinstance(server, dict):
             server["enabled"] = False
     source["plugin"] = [
-        f"{compatibility['slim']['package']}@{compatibility['slim']['version']}",
+        "./node_modules/oh-my-opencode-slim/dist/index.js",
         "./plugins/biexce-role-access.js",
         "./plugins/biexce-recovery.js",
     ]
-    source["default_agent"] = "orchestrator"
+    source["default_agent"] = "bx-director"
     source["subagent_depth"] = 1
     source["autoupdate"] = False
     source["permission"] = global_permission()
