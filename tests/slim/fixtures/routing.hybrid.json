@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "models": {
+    "bx-director": "opencode/deepseek-v4-flash-free",
+    "bx-plan": "opencode/deepseek-v4-flash-free",
+    "bx-explore": "biexce-local/vllm/DeepSeek-V4-Flash-0731",
+    "bx-code": "biexce-local/vllm/DeepSeek-V4-Flash-0731",
+    "bx-fix": "biexce-local/vllm/DeepSeek-V4-Flash-0731",
+    "bx-test": "biexce-local/vllm/DeepSeek-V4-Flash-0731",
+    "bx-review": "opencode/deepseek-v4-flash-free"
+  }
+}

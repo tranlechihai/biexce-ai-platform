@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "slim": {
+    "package": "oh-my-opencode-slim",
+    "version": "2.2.13",
+    "git_head": "781ca04fb83dbcd73a262c19ca70533ebbc117d2",
+    "integrity": "sha512-v5W4nUZs1/1P2YAQZQkyp1Mb1PJSLWi565kg6Rz4ua1pN/XY/eZ+U2ZdQvkxyB9PY6qjrx8s6JAnvvEWthslcQ==",
+    "schema_sha256": "654acc424c56f65d9de841f5c040556252f0e114e7ce77966cb3bfef4ed25432",
+    "background_wake_key": "orchestratorWake"
+  },
+  "opencode": {
+    "baseline_cli": "1.18.4",
+    "prototype_cli": "1.18.13",
+    "prototype_sdk": "1.18.13",
+    "prototype_plugin": "1.18.13",
+    "background_subagents_environment": "OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS",
+    "background_subagents_value": "true"
+  },
+  "runtime": {
+    "zod": "4.4.3"
+  }
+}

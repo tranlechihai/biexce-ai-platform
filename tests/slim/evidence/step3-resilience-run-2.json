@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "runtime": {
+    "slim": "2.2.13",
+    "opencode": "1.18.13",
+    "routing": "cloud-only",
+    "global_install_modified": false,
+    "isolated_auth_copy_used": true
+  },
+  "workflow": {
+    "status": "PASS_GATE_2",
+    "parent": {
+      "session_id": "ses_001e4da41ffevIJ0Rj5tX5DCWS",
+      "agent": "BX-Director",
+      "model": "openai/gpt-5.6-terra",
+      "created_ms": 1786674619838,
+      "updated_ms": 1786675691544
+    },
+    "children": {
+      "explore": {
+        "session_id": "ses_001e45effffemjc85B5k7E0WpP",
+        "model": "openai/gpt-5.6-luna-fast"
+      },
+      "plan": {
+        "session_id": "ses_001e399c7ffeCXWWt2zR2tKiQh",
+        "model": "openai/gpt-5.6-sol"
+      },
+      "plan_review": {
+        "session_id": "ses_001e1ba2affeoLPh6sfmMJcfo8",
+        "model": "openai/gpt-5.6-terra"
+      },
+      "outcome_writer": {
+        "session_id": "ses_001dcbf91ffeWL3gP16TOddt5O",
+        "model": "openai/gpt-5.6-terra-fast",
+        "created_ms": 1786675150959,
+        "updated_ms": 1786675205410
+      },
+      "severity_writer": {
+        "session_id": "ses_001dcbf6dffebSGi1oewXw0lWr",
+        "model": "openai/gpt-5.6-terra-fast",
+        "created_ms": 1786675150994,
+        "updated_ms": 1786675201070
+      },
+      "deferred_adjustment": {
+        "session_id": "ses_001d995cdffe6Yrp66tv8q01xh",
+        "model": "openai/gpt-5.6-terra-fast"
+      },
+      "deferred_repair": {
+        "session_id": "ses_001d69737ffeSGIZEx16nDWuIP",
+        "model": "openai/gpt-5.6-terra-fast"
+      },
+      "integration_test": {
+        "session_id": "ses_001d60fd1ffex1xRn4jQaD83xP",
+        "model": "openai/gpt-5.6-luna-fast",
+        "created_ms": 1786675589166,
+        "updated_ms": 1786675606603
+      },
+      "integration_review": {
+        "session_id": "ses_001d60f22ffemXvNDRazfWGGKB",
+        "model": "openai/gpt-5.6-terra",
+        "created_ms": 1786675589341,
+        "updated_ms": 1786675626865
+      }
+    },
+    "parallel_writers": {
+      "status": "PASS",
+      "start_gap_ms": 35,
+      "overlap_ms": 50076,
+      "ownership_conflict": false
+    },
+    "parallel_integration": {
+      "status": "PASS",
+      "start_gap_ms": 175,
+      "overlap_ms": 17262
+    },
+    "recovery_cases": {
+      "restart_parent_woken": true,
+      "woken_session_id": "ses_001e4da41ffevIJ0Rj5tX5DCWS",
+      "completed_work_preserved": true,
+      "post_gate_1_requirement_change_honored": true,
+      "stale_test_session_cancelled": "ses_001da1fedffeSudkulLkCCGlZJ",
+      "stale_review_session_cancelled": "ses_001da1fd2fferHajMePuFxQrEZ",
+      "bounded_adjustment_lane_used": true,
+      "user_edited_runtime_state": false,
+      "user_called_specialist_manually": false
+    },
+    "gates": {
+      "gate_1": "APPROVED",
+      "gate_2": "APPROVED"
+    },
+    "legacy_runtime_artifacts_created": false
+  },
+  "verification": {
+    "command": "npm test",
+    "independent_rerun_exit_code": 0,
+    "tests_run": 9,
+    "tests_passed": 9,
+    "final_review": "APPROVE"
+  },
+  "behavior": {
+    "normalize_denied": "rejected",
+    "normalize_deferred": "deferred",
+    "deferred_is_final": false,
+    "rejected_is_final": true,
+    "normalize_high_severity": "high"
+  },
+  "outputs": {
+    "lib/outcome.js": "7edf059f56daa855ddb560185b9ebe0baca072d725199fbb1003d721259e42c5",
+    "lib/severity.js": "d8126b22f275aeef7bf479ff77cb17a6a9968cc56ee6175fbb60c27bf9509cb3",
+    "lib/summary.js": "31fc33e99d1f1cd354141ae5456c6b3937f35b25e8e92939282b233601739660",
+    "lib/index.js": "3d8e17d8c124feeca833668adb93530a70fdf9bb6bb7f0c8166cc453d89ac479",
+    "test/outcome.test.js": "8a57c9d1ebe577fb833362a605f38c75f68c9ce3bee52bb08d9dd715e4aae201",
+    "test/severity.test.js": "aadd95f35d7bdaa24a54dffc3314675821f551cacc505f491b5da12630105434",
+    "test/summary.test.js": "d0cab31c4f37710f47aa8bc7c7d578576b2ad83933312d30d4ee5a2adecd1b61"
+  },
+  "scope": {
+    "fixture": "resilience-node",
+    "second_project_exercised": true,
+    "restart_parent_reconcile_exercised": true,
+    "restart_while_writer_busy_exercised": false,
+    "provider_interruption_exercised": false
+  },
+  "verdict": {
+    "step_3_policy_e2e_run_2": true,
+    "step_3_cross_project_acceptance": true,
+    "step_3_full_resilience_acceptance": false,
+    "remaining": "Exercise provider interruption and exact writer-busy restart during the Ubuntu hybrid acceptance."
+  }
+}

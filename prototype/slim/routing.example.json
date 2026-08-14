@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "models": {
+    "bx-director": "openai/gpt-5.6-terra",
+    "bx-plan": "openai/gpt-5.6-sol",
+    "bx-explore": "biexce-local/vllm/Qwen/Qwen3.6-27B-FP8",
+    "bx-code": "biexce-local/vllm/Qwen/Qwen3.6-27B-FP8",
+    "bx-fix": "biexce-local/vllm/Qwen/Qwen3.6-27B-FP8",
+    "bx-test": "biexce-local/vllm/Qwen/Qwen3.6-27B-FP8",
+    "bx-review": "openai/gpt-5.6-terra"
+  }
+}

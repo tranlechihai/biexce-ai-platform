@@ -1,0 +1,8 @@
+{
+  "name": "biexce-resilience-node-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-isolation=none"
+  }
+}

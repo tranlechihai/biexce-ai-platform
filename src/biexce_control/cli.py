@@ -42,6 +42,7 @@ from .model_routing import (
     sync_native_agent_models,
     validate_routing_document,
 )
+from .slim_cli import add_slim_parser, handle_slim
 from .validation import GateValidationError, arm_validator, require_project_valid, validate_project
 from .workflow import (
     WorkflowStateError,
@@ -220,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     matrix.add_argument("--server-evidence")
     matrix.add_argument("--live-inference", action="store_true")
     _add_config_arguments(matrix)
+    add_slim_parser(commands)
     return parser
 
 
@@ -1016,6 +1018,8 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_doctor(arguments)
         if arguments.command == "gate0":
             return _handle_gate0(arguments)
+        if arguments.command == "slim":
+            return handle_slim(arguments, _print)
         raise ControlPlaneError(f"Unsupported command: {arguments.command}")
     except ControlPlaneError as error:
         _print_error(error, as_json=getattr(arguments, "as_json", False))

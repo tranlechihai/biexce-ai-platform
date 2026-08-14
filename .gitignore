@@ -30,7 +30,8 @@
 /scripts/generate_skill_tree.py
 
 # Development-only files excluded from the public installation repository
-/tests/
+# Source-level architecture and regression tests are tracked. Only generated
+# test output belongs in the cache patterns below.
 /dashboard/tests/
 /fixtures/
 /project-template/
@@ -59,3 +60,5 @@ Desktop.ini
 # Temporary directories
 /Temp/
 /temp/
+/tests/slim/_runtime_*/
+/tests/slim/_cli_smoke_*/

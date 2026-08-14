@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "runtime": {
+    "slim": "2.2.13",
+    "opencode": "1.18.13",
+    "global_install_modified": false
+  },
+  "gateway": {
+    "status": "PASS",
+    "catalog_model": "vllm/DeepSeek-V4-Flash-0731",
+    "inference_model": "DeepSeek-V4-Flash-0731",
+    "inference_text": "BIEXCE-HYBRID-LOCAL-PASS"
+  },
+  "native_delegation": {
+    "status": "PASS",
+    "parent": {
+      "session": "ses_005514f9bffexmTHW4WsZB1HhM",
+      "provider": "opencode",
+      "model": "deepseek-v4-flash-free"
+    },
+    "child": {
+      "session": "ses_005512d8dffeeJ9z3KT8qdFKxY",
+      "agent": "bx-code",
+      "provider": "biexce-local",
+      "model": "vllm/DeepSeek-V4-Flash-0731",
+      "result": "HYBRID-CHILD-PASS"
+    }
+  },
+  "workflow": {
+    "status": "PASS_TO_BACKGROUND_EXPLORE",
+    "parent": "ses_005507c9fffegG3mcMNoybCO3I",
+    "parent_agent": "orchestrator",
+    "parent_model": "opencode/deepseek-v4-flash-free",
+    "explore": "ses_00550004affeWZwHYBv6jmWKhM",
+    "explore_model": "biexce-local/vllm/DeepSeek-V4-Flash-0731",
+    "global_install_modified": false
+  },
+  "verdict": {
+    "hybrid_routing": true,
+    "full_step_2_accepted": false,
+    "reason": "CLI smoke intentionally ended after background Explore dispatch; the full Gate 1 to Gate 2 run requires a persistent OpenCode or OpenChamber host and human gate decisions."
+  }
+}
