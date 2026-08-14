@@ -99,6 +99,16 @@ biexce slim doctor --config-dir <directory>
 đúng. `doctor` chỉ PASS khi dependency cục bộ cũng đã được cài trong chính output.
 Generator từ chối ghi vào user-global và từ chối overwrite output có sẵn.
 
+Khi chạy, dùng launcher được sinh trong output:
+
+```bash
+export OPENCODE_BINARY="<directory>/bin/biexce-opencode"
+```
+
+Launcher cô lập config/plugin legacy bằng một `XDG_CONFIG_HOME` riêng nhưng không
+đổi data directory chứa auth. Vì vậy provider/model user đã chọn vẫn hoạt động,
+trong khi custom runtime cũ không thể can thiệp vào workflow Slim.
+
 ## Ranh giới migration
 
 Workflow pack mới chưa tự thay cấu hình global và chưa xóa runtime legacy. Chỉ

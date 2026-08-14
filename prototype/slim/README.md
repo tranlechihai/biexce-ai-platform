@@ -49,6 +49,12 @@ evidence plugin vì CLI này chỉ liệt kê agent tĩnh trước khi plugin đ
 hiển thị. Specialist có thể được chọn trong UI, gọi bằng `@bx-code`
 hoặc chạy trực tiếp bằng `opencode run --agent bx-code ...`.
 
+Mỗi output sinh hai launcher `bin/biexce-opencode` và
+`bin/biexce-opencode.cmd`. OpenChamber phải trỏ `OPENCODE_BINARY` vào launcher
+phù hợp thay vì gọi binary trong `node_modules` trực tiếp. Launcher giữ auth và
+provider của user nhưng dùng `XDG_CONFIG_HOME` riêng, nên OpenCode không tự nạp
+plugin legacy từ user-global như `biexce-control.js`.
+
 Prototype bật `backgroundJobs.orchestratorWake` theo đúng schema Slim 2.2.13 để
 Director có thể được đánh thức khi còn công việc chưa hoàn tất. Schema được khóa
 bằng SHA-256 trong `compatibility.json`. Hành vi này vẫn phải được chứng minh

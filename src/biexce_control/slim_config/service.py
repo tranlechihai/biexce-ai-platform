@@ -105,6 +105,14 @@ def inspect_generated_config(config_dir: str | Path) -> dict[str, object]:
     checks.append(
         _check("role_access", access_ok, "seven directly selectable BIEXCE roles")
     )
+    launcher_ok = (
+        (root / "bin" / "biexce-opencode").is_file()
+        and (root / "bin" / "biexce-opencode.cmd").is_file()
+        and (root / ".xdg-config" / "opencode").is_dir()
+    )
+    checks.append(
+        _check("launcher", launcher_ok, "isolated OpenCode launcher")
+    )
     dependencies = package.get("dependencies")
     pins_ok = isinstance(dependencies, dict) and all(
         dependencies.get(name) == version

@@ -31,6 +31,7 @@ from .config import (
 )
 from .errors import PrototypeError
 from .jsonio import read_json, write_json
+from .launchers import write_launchers
 
 
 def _global_config_roots() -> set[Path]:
@@ -164,6 +165,7 @@ def _assemble(
         "Template",
     )
     _copy_skills(staging)
+    write_launchers(staging)
 
 
 def build_prototype(

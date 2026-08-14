@@ -39,6 +39,11 @@ def _binary(root: Path, name: str) -> Path:
     return root / "node_modules" / ".bin" / f"{name}{suffix}"
 
 
+def _opencode_launcher(root: Path) -> Path:
+    suffix = ".cmd" if os.name == "nt" else ""
+    return root / "bin" / f"biexce-opencode{suffix}"
+
+
 def _run(binary: Path, arguments: list[str], root: Path) -> subprocess.CompletedProcess:
     command = [str(binary), *arguments]
     environment = os.environ.copy()
@@ -116,7 +121,7 @@ def run_generated_doctor(config_dir: str | Path) -> dict[str, object]:
         return status
 
     compatibility = read_json(root / "compatibility.json")
-    opencode = _binary(root, "opencode")
+    opencode = _opencode_launcher(root)
     slim = _binary(root, "oh-my-opencode-slim")
     runtime_checks: list[dict[str, object]] = []
     if not opencode.is_file() or not slim.is_file():

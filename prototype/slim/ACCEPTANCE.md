@@ -18,7 +18,7 @@ OpenChamber; PASS tĩnh không bao giờ thay thế evidence live.
 
 | ID | Yêu cầu |
 |---|---|
-| L1 | `oh-my-opencode-slim doctor` chấp nhận config exact 2.2.13; `biexce slim doctor` PASS registry bridge; từng role khởi chạy đúng actual runtime model. |
+| L1 | `oh-my-opencode-slim doctor` chấp nhận config exact 2.2.13; `biexce slim doctor` PASS registry bridge và isolated launcher; từng role khởi chạy đúng actual runtime model mà không nạp plugin legacy. |
 | L2 | Canary edit của role read-only bị chặn, BX Code sửa file trong project thành công, path ngoài project vẫn qua permission UI. |
 | L3 | Task backend chỉ load được skill đã gán; skill không liên quan không khả dụng. |
 | L4 | OpenChamber cho chọn trực tiếp đủ bảy role user-facing, không hiện Director legacy trùng; child native vẫn hiện role/model và chuyển `busy` sang terminal. |
