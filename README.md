@@ -144,9 +144,16 @@ python -m unittest discover -s tests/slim -p "test_*.py" -q
 powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1 -SkipCli
 ```
 
+## Đánh giá workflow
+
+`biexce eval` thu metrics đã rút gọn từ OpenCode session export, JUnit và assessment
+của người chạy. Evidence mặc định nằm ngoài project; workflow không bị thêm lock,
+job board hoặc state machine. Xem [hướng dẫn evaluation](docs/EVALUATION.md).
+
 ## Tài liệu
 
 - [Hướng dẫn Plan/Build](docs/OPENCODE-PLAN-BUILD.md)
+- [Đánh giá workflow](docs/EVALUATION.md)
 - [Cài đặt Windows](docs/INSTALL-WINDOWS.md)
 - [Cài đặt Ubuntu/Linux](docs/INSTALL-UBUNTU.md)
 - [Cài đặt macOS](docs/INSTALL-MACOS.md)

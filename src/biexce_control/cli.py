@@ -43,6 +43,7 @@ from .model_routing import (
     validate_routing_document,
 )
 from .basic_cli import add_basic_parser, handle_basic
+from .eval_cli import add_eval_parser, handle_eval
 from .slim_cli import add_slim_parser, handle_slim
 from .validation import GateValidationError, arm_validator, require_project_valid, validate_project
 from .workflow import (
@@ -224,6 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_config_arguments(matrix)
     add_slim_parser(commands)
     add_basic_parser(commands)
+    add_eval_parser(commands)
     return parser
 
 
@@ -1024,6 +1026,8 @@ def main(argv: list[str] | None = None) -> int:
             return handle_slim(arguments, _print)
         if arguments.command == "basic":
             return handle_basic(arguments, _print)
+        if arguments.command == "eval":
+            return handle_eval(arguments, _print)
         raise ControlPlaneError(f"Unsupported command: {arguments.command}")
     except ControlPlaneError as error:
         _print_error(error, as_json=getattr(arguments, "as_json", False))

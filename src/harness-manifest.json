@@ -346,6 +346,8 @@
       "area": "roles/data-ai",
       "status": "ready",
       "applies_to": [
+        "plan",
+        "build",
         "bx-plan",
         "bx-code",
         "bx-test",
@@ -353,7 +355,7 @@
       ],
       "sources": "NIST AI Risk Management Framework and Playbook; MLflow model evaluation documentation; OpenAI evaluation best practices",
       "path": "skills/roles/data-ai/eval-harness/SKILL.md",
-      "sha256": "CE86F031099ACEB127BB43C5D005AB5DB91EB3766DE418C72CF2C52B31D80728"
+      "sha256": "78556FD6D3495B8BC0ECFFF850E662D3AD0EDE10398D9CAD58CC267469930CE7"
     },
     {
       "id": "python-quality",

@@ -63,3 +63,4 @@ Desktop.ini
 /tests/slim/_runtime_*/
 /tests/slim/_cli_smoke_*/
 /tests/slim/evidence/
+/tests/evaluation/_runtime_*/

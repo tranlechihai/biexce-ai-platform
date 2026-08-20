@@ -5,7 +5,7 @@ compatibility: opencode
 metadata:
   owner: biexce-ai-workflow
   status: ready
-  applies_to: bx-plan, bx-code, bx-test, bx-review
+  applies_to: plan, build, bx-plan, bx-code, bx-test, bx-review
   sources: NIST AI Risk Management Framework and Playbook; MLflow model evaluation documentation; OpenAI evaluation best practices
 ---
 
