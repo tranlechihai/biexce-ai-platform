@@ -1,5 +1,6 @@
 const RECOVERY_TAG = "biexce.restart-recovery.v1"
 const INCOMPLETE = new Set(["pending", "in_progress"])
+const DIRECTORS = new Set(["orchestrator", "bx-director"])
 
 
 function responseData(response) {
@@ -13,11 +14,19 @@ function isActive(status, sessionID) {
 }
 
 
+function isRecoveryMessage(entry) {
+  return entry?.parts?.some(
+    (part) => part?.metadata?.["biexce.restartRecovery"] === RECOVERY_TAG,
+  )
+}
+
+
 function lastOrchestratorMessage(messages) {
   return [...messages].reverse().find(
     (entry) =>
       entry?.info?.role === "user" &&
-      entry.info.agent === "orchestrator",
+      DIRECTORS.has(entry.info.agent) &&
+      !isRecoveryMessage(entry),
   )
 }
 
@@ -35,6 +44,37 @@ function childSnapshot(children, status) {
       return `- ${child.id} | ${state} | ${child.title ?? "untitled"}`
     })
     .join("\n")
+}
+
+
+function hasActiveChild(children, status) {
+  return children.some((child) => isActive(status, child.id))
+}
+
+
+function recoveryFingerprint(candidate, status) {
+  const todos = candidate.todos
+    .map((todo) => [todo.id, todo.status, todo.content])
+    .sort((left, right) => String(left[0]).localeCompare(String(right[0])))
+  const children = candidate.children
+    .map((child) => [
+      child.id,
+      status?.[child.id]?.type ?? "idle-or-stopped",
+    ])
+    .sort((left, right) => String(left[0]).localeCompare(String(right[0])))
+  return JSON.stringify({
+    sessionID: candidate.session.id,
+    initiatorID: candidate.initiator.info.id ?? "initial-objective",
+    todos,
+    children,
+  })
+}
+
+
+function rememberWake(seen, fingerprint) {
+  if (!seen) return
+  seen.add(fingerprint)
+  if (seen.size > 100) seen.delete(seen.values().next().value)
 }
 
 
@@ -96,14 +136,19 @@ async function readCandidate(sessionApi, session, directory, status) {
   }
   const pending = incompleteTodos(todos)
   const initiator = lastOrchestratorMessage(messages)
-  if (pending.length === 0 || !initiator || isActive(status, session.id)) {
+  if (
+    pending.length === 0 ||
+    !initiator ||
+    isActive(status, session.id) ||
+    hasActiveChild(children, status)
+  ) {
     return undefined
   }
   return { session, todos: pending, children, initiator }
 }
 
 
-export async function recoverInterruptedParent(client, directory) {
+export async function recoverInterruptedParent(client, directory, options = {}) {
   const sessionApi = client?.session
   if (!sessionApi) return { status: "unsupported" }
   const [listResponse, statusResponse] = await Promise.all([
@@ -121,13 +166,18 @@ export async function recoverInterruptedParent(client, directory) {
   for (const session of roots) {
     const candidate = await readCandidate(sessionApi, session, directory, status)
     if (!candidate) continue
+    const fingerprint = recoveryFingerprint(candidate, status)
+    if (options.seen?.has(fingerprint)) {
+      return { status: "already-woken", sessionID: session.id }
+    }
     const model = candidate.initiator.info.model
+    const agent = candidate.initiator.info.agent
     await sessionApi.promptAsync(
       {
         path: { id: session.id },
         query: { directory },
         body: {
-          agent: "orchestrator",
+          agent,
           ...(model ? { model } : {}),
           parts: [{
             type: "text",
@@ -139,6 +189,7 @@ export async function recoverInterruptedParent(client, directory) {
         throwOnError: true,
       },
     )
+    rememberWake(options.seen, fingerprint)
     return { status: "woken", sessionID: session.id }
   }
   return { status: "nothing-to-recover" }

@@ -81,6 +81,16 @@ reminder vào chính parent để Director kiểm tra artifact và tiếp tục 
 cũ hoặc re-dispatch đúng một lần. Bridge không tạo scheduler, lock, lease hoặc
 workflow-state riêng.
 
+Bridge chạy lại theo các event native `server.connected`, `session.idle`,
+`session.status`, `session.error` và `todo.updated`. Nó đợi child còn `busy/retry`
+thay vì dispatch trùng, debounce event và chỉ wake một lần cho cùng snapshot.
+Khi child chuyển sang trạng thái dừng mà TODO vẫn chưa xong, snapshot thay đổi và
+parent được wake để kiểm tra partial change rồi chạy lại đúng lane còn thiếu.
+
+Workflow background phải chạy trong process OpenChamber hoặc OpenCode TUI/server
+đang sống. Không dùng `opencode run` hoặc `opencode run --fork` để resume workflow
+background: đây là CLI one-shot; khi CLI thoát, child vừa dispatch có thể bị dừng.
+
 Lỗi API hoặc plugin được ghi vào OpenCode application log; không bị nuốt im
 lặng. Retry khởi động được giới hạn và không thay thế cơ chế background của
 Slim. Nếu provider chưa sẵn sàng, session vẫn giữ nguyên để tiếp tục sau đó.

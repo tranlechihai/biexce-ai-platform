@@ -114,6 +114,8 @@ class RoleAccessTests(unittest.TestCase):
         )
 
     def test_runtime_probe_requires_real_visible_registry(self):
+        self.assertEqual(120, doctor.RUNTIME_COMMAND_TIMEOUT_SECONDS)
+
         def fake_debug(_root, agent_id):
             if agent_id == "orchestrator":
                 return {

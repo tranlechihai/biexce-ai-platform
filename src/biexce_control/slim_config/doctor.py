@@ -21,6 +21,8 @@ EXPECTED_AGENT_MODES = {
     "bx-review": "all",
 }
 
+RUNTIME_COMMAND_TIMEOUT_SECONDS = 120
+
 
 def _binary(root: Path, name: str) -> Path:
     suffix = ".cmd" if os.name == "nt" else ""
@@ -65,7 +67,7 @@ def _run(binary: Path, arguments: list[str], root: Path) -> subprocess.Completed
         text=True,
         encoding="utf-8",
         errors="replace",
-        timeout=30,
+        timeout=RUNTIME_COMMAND_TIMEOUT_SECONDS,
         check=False,
     )
 

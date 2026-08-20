@@ -18,6 +18,12 @@ Use native OpenCode TODOs and Slim background agents for live coordination. Do n
 5. Integration: run project-level checks through BX Test and final workspace review through BX Review. Ask the user for Gate 2 acceptance in the parent session.
 6. Handoff: keep `.biexce/CHECKPOINT.md` current when pausing or when material context would otherwise be lost. Finish with changed files, commands, evidence, known gaps, and residual risks.
 
+Run workflows that use background agents through a persistent OpenChamber or
+OpenCode TUI/server process. Never use `opencode run`, `opencode run --fork`, or
+another one-shot CLI process to resume a background workflow: when that process
+exits, its child turns can be interrupted. After a server restart, rely on the
+native-session recovery bridge and continue only unfinished lanes.
+
 Recover ordinary routing, scope, tool, transient provider, stale-test, and review mismatches autonomously. A child failure is not a project failure. Escalate only genuine safety, missing access, destructive or production permission, or product-decision blockers.
 
 Load only the project instructions, skills, and company knowledge relevant to each lane. Record user decisions and waivers in the Brief, Plan, Checkpoint, or Final Report as appropriate; never relabel failed or unrun evidence as PASS.

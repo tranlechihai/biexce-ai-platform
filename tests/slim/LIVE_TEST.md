@@ -88,18 +88,10 @@ và không cần user gọi specialist thủ công.
 Evidence của mỗi lần chạy phải ghi đúng phạm vi. Một project đi từ Brief
 đến Gate 2 chỉ chứng minh E2E run đó; không được suy diễn thành restart,
 provider recovery hoặc khả năng tổng quát cho project thứ hai nếu chưa chạy.
-Run cloud đầu tiên được lưu tại
-`evidence/step3-resilience-run-1.json`.
+Evidence live phải được lưu ngoài source repository và không chứa credential.
 
 Project thứ hai dùng `fixtures/resilience-node` để tránh chỉ kiểm tra một
 ngôn ngữ hoặc một bộ path. Run này phải kết hợp restart khi writer đang
 busy và một provider interruption có thể phục hồi. Chỉ phần việc chưa
 hoàn tất được dispatch lại; không được sửa state hay gọi specialist
 thủ công.
-
-Evidence của project Node nằm tại
-`evidence/step3-resilience-run-2.json`. Run này PASS Gate 2, chạy hai writer
-song song, giữ nguyên công việc sau restart và xử lý thay đổi hậu Gate 1 bằng
-một adjustment lane. Provider interruption và đúng tình huống restart khi
-writer đang busy vẫn được giữ lại cho acceptance hybrid trên Ubuntu; evidence
-không được suy diễn hai case này là đã PASS.

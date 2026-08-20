@@ -1,37 +1,37 @@
-# BIEXCE — Bộ agent cho OpenCode
+# BIEXCE cho OpenCode
 
-BIEXCE AGENTS cung cấp 7 agent hỗ trợ quy trình phát triển phần mềm trên OpenCode
-Desktop và TUI. Bộ cài đặt theo tài khoản người dùng sẽ đăng ký agent, skill,
-model routing, runtime guard và Autopilot theo từng dự án mà không cần quyền
-Administrator hoặc `sudo`.
+BIEXCE bổ sung rule và skill kỹ thuật cho workflow **Plan/Build** gốc của
+OpenCode. Cấu hình được sinh vào một thư mục riêng, không ghi đè cấu hình người
+dùng và không phụ thuộc custom scheduler.
 
-## Các agent
+## Workflow mặc định
 
-| Agent | Trách nhiệm |
-| --- | --- |
-| `bx-director` | Điều phối workflow và các Human Gate |
-| `bx-explore` | Khảo sát repository và tạo Codebase Brief |
-| `bx-plan` | Lập kế hoạch và tạo task contract có phạm vi rõ ràng |
-| `bx-code` | Triển khai các task đã được duyệt |
-| `bx-fix` | Phân tích và sửa lỗi dựa trên evidence |
-| `bx-test` | Chạy kiểm tra và cung cấp test evidence |
-| `bx-review` | Review kế hoạch, thay đổi source và kết quả tích hợp |
+| Mode | Vai trò | Quyền |
+| --- | --- | --- |
+| `plan` | Khảo sát, làm rõ yêu cầu và lập kế hoạch | Chỉ đọc source |
+| `build` | Code, test, debug và hoàn thiện | Được sửa project |
 
-Mỗi agent có thể dùng bất kỳ `provider/model` nào người dùng đã kết nối và lựa
-chọn.
+Người dùng chọn model độc lập cho từng mode. Ví dụ thường dùng:
+
+- `plan`: model cloud để phân tích và review sâu.
+- `build`: model local để code, test và sửa lỗi.
+
+Hai mode dùng chung catalog skill BIEXCE. Chúng có thể gọi subagent chỉ-đọc
+`explore` hoặc `general` cho các phần khảo sát độc lập; quyền sửa source vẫn tập
+trung ở `build` để tránh xung đột.
 
 ## Yêu cầu
 
-- OpenCode 1.18.4 trở lên.
+- OpenCode có trong `PATH`, hoặc đã đặt `OPENCODE_BINARY`.
 - Python 3 có trong `PATH`.
-- Windows PowerShell 5.1+, hoặc `bash` trên Linux và macOS.
-- Provider cloud đã kết nối nếu sử dụng model cloud.
-- Có kết nối mạng tới endpoint đã cấu hình nếu sử dụng model nội bộ.
+- PowerShell 5.1+ trên Windows, hoặc `bash` trên Linux/macOS.
+- Các provider/model dự định dùng đã xuất hiện trong catalog OpenCode.
 
-## Cài đặt
+## Cài CLI BIEXCE
 
-Clone repository hoặc giải nén release package, sau đó chạy bộ cài tương ứng
-với hệ điều hành.
+Clone repository hoặc giải nén release package, sau đó chạy bộ cài tương ứng.
+Bộ cài giữ các tệp tương thích legacy; launcher do `biexce basic setup` sinh ra
+luôn dùng cấu hình Plan/Build cô lập và không nạp workflow 7-agent cũ.
 
 Windows:
 
@@ -44,6 +44,7 @@ Ubuntu/Linux:
 ```bash
 chmod u+rx bin/linux/*.sh
 ./bin/linux/install.sh
+source ~/.profile
 ```
 
 macOS:
@@ -51,98 +52,102 @@ macOS:
 ```bash
 chmod u+rx bin/macos/*.command
 ./bin/macos/install.command
+source ~/.zprofile
 ```
 
-Sau khi cài đặt, hãy mở terminal mới. Lệnh global sau đó có thể dùng tại mọi
-thư mục dự án:
+## Tạo cấu hình Plan/Build
+
+Xem model ID chính xác trước:
 
 ```text
-biexce setup
-biexce status
-biexce self-test
+opencode models
 ```
 
-## Cấu hình model
+Tạo một cấu hình mới. Thay hai model mẫu bằng model đang có trên máy:
 
-Dùng `/connect` và `/models` trong OpenCode, hoặc chạy `opencode models`, để
-xem các model hiện có. Model ID phải đúng định dạng `provider/model`.
-
-Kiểm tra catalog và trạng thái provider:
-
-```text
-biexce model list
+```bash
+biexce basic setup \
+  --output "$HOME/.config/biexce/plan-build" \
+  --plan-model openai/gpt-5.6-sol \
+  --build-model biexce-local/vllm/Qwen/Qwen3.8-27B-FP8 \
+  --opencode-config-dir "$HOME/.config/opencode" \
+  --json
 ```
 
-`catalog_status: DISCOVERED` chỉ xác nhận model xuất hiện trong catalog.
-`credential_status` cho biết provider đã có thông tin đăng nhập hay chưa;
-`inference_status: NOT VERIFIED` nghĩa là lệnh này chưa gửi request thật.
-Nếu provider báo `NOT AUTHENTICATED`, dùng `/connect` trong OpenCode. BIEXCE vẫn
-cho phép user chọn và lưu model đó, nhưng sẽ cảnh báo khi setup, validate,
-status và doctor.
+PowerShell:
 
-Thiết lập tương tác:
-
-```text
-biexce setup
+```powershell
+biexce basic setup `
+  --output "$HOME\.config\biexce\plan-build" `
+  --plan-model openai/gpt-5.6-sol `
+  --build-model biexce-local/vllm/Qwen/Qwen3.8-27B-FP8 `
+  --opencode-config-dir "$HOME\.config\opencode" `
+  --json
 ```
 
-Thiết lập không tương tác với một model mặc định và model riêng cho agent nếu
-cần:
+Kiểm tra cấu hình:
 
 ```text
-biexce setup --model <provider/model> --agent bx-code=<provider/model> --yes
-biexce model validate
+biexce basic status --config-dir <thu-muc-plan-build> --json
+biexce basic doctor --config-dir <thu-muc-plan-build> --json
 ```
 
-Provider nội bộ tùy chọn đọc endpoint từ biến môi trường
-`BIEXCE_LOCAL_BASE_URL`. Giá trị phải là OpenAI-compatible base URL kết thúc
-bằng `/v1`. Hãy khởi động lại OpenCode sau khi đổi endpoint hoặc model routing.
-Kiểm tra inference thật bằng `biexce self-test --live-inference` khi provider
-đã truy cập được.
+Mỗi lần setup phải dùng một thư mục output mới. Cách này làm cho bản build có
+thể kiểm tra, rollback hoặc xóa mà không ảnh hưởng cấu hình OpenCode hiện tại.
 
-## Sử dụng Autopilot
+## Chạy project
 
-Tại thư mục dự án cần chạy:
+Linux/macOS:
 
-```text
-biexce auto on
+```bash
+cd /path/to/project
+$HOME/.config/biexce/plan-build/bin/biexce-opencode
 ```
 
-Mở cùng thư mục bằng OpenCode, chọn `Bx-Director`, rồi cung cấp mục tiêu, ràng
-buộc và definition of done. BIEXCE sẽ dừng tại Human Gate 1 trước khi triển
-khai và Human Gate 2 trước khi hoàn tất. Việc duyệt được thực hiện trực tiếp
-trong OpenCode Desktop hoặc TUI.
+Windows:
 
-Kiểm tra hoặc dừng workflow của dự án:
-
-```text
-biexce status
-biexce auto off
+```powershell
+cd C:\path\to\project
+& "$HOME\.config\biexce\plan-build\bin\biexce-opencode.cmd"
 ```
 
-Trạng thái Autopilot được lưu trong `.biexce/` của dự án. Khi Autopilot tắt,
-các agent vẫn hoạt động độc lập ở chế độ hỗ trợ hằng ngày.
+Trong OpenCode:
 
-## Kiểm tra
+1. Chọn `plan`, gửi mục tiêu và yêu cầu lập kế hoạch.
+2. Duyệt hoặc điều chỉnh kế hoạch.
+3. Chuyển sang `build`, yêu cầu triển khai và chạy đầy đủ kiểm tra.
 
-```text
-biexce status
-biexce self-test
-```
+OpenChamber có thể quản lý cùng OpenCode instance. Hãy cấu hình nó chạy launcher
+trên hoặc truyền đúng `OPENCODE_CONFIG_DIR`; nếu không, OpenChamber có thể nạp
+lại cấu hình agent cũ.
 
-Một bản cài đặt hoạt động bình thường sẽ hiển thị routing của đủ 7 agent,
-runtime guard ở trạng thái sẵn sàng và `ok: true` từ self-test. Khi endpoint
-nội bộ truy cập được, kiểm tra inference thực bằng:
+## Nguyên tắc chất lượng
 
-```text
-biexce self-test --live-inference
+- User là authority cao nhất về scope và quyết định sản phẩm.
+- Không claim hoàn thành nếu formatter/linter/typecheck/test/build liên quan
+  chưa pass.
+- Không xóa hoặc làm yếu test để lấy kết quả xanh.
+- Chỉ load skill liên quan để tránh làm phình context.
+- Không sửa ngoài project hoặc thực hiện hành động phá hủy nếu chưa được phép.
+
+## Chế độ 7 agent cũ
+
+Source của runtime 7 agent/Slim vẫn được giữ tạm thời để tương thích và phục vụ
+migration. Đây là chế độ nâng cao, không còn là workflow mặc định được khuyến
+nghị. Lệnh của chế độ này nằm dưới `biexce slim` và `biexce autopilot`.
+
+## Kiểm tra source
+
+```powershell
+python -m unittest discover -s tests/basic -p "test_*.py" -q
+python -m unittest discover -s tests/slim -p "test_*.py" -q
+powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1 -SkipCli
 ```
 
 ## Tài liệu
 
-- [Điều khiển và Autopilot](docs/CONTROL-QUICKSTART.md)
-- [Cài đặt trên Windows](docs/INSTALL-WINDOWS.md)
-- [Cài đặt trên Ubuntu/Linux](docs/INSTALL-UBUNTU.md)
-- [Cài đặt trên macOS](docs/INSTALL-MACOS.md)
-- [Hướng dẫn sử dụng agent](docs/AGENT-GUIDE.md)
-- [Danh mục agent và skill](docs/AGENT-SKILL-CATALOG.md)
+- [Hướng dẫn Plan/Build](docs/OPENCODE-PLAN-BUILD.md)
+- [Cài đặt Windows](docs/INSTALL-WINDOWS.md)
+- [Cài đặt Ubuntu/Linux](docs/INSTALL-UBUNTU.md)
+- [Cài đặt macOS](docs/INSTALL-MACOS.md)
+- [Catalog skill](docs/AGENT-SKILL-CATALOG.md)

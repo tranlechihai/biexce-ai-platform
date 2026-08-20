@@ -64,7 +64,7 @@ fi
 
 if [[ "$INSTALL_EXIT" -eq 0 ]]; then
     printf '\nINSTALL PASS\n'
-    printf 'Open a new terminal, then run: biexce auto on\n'
+    printf 'Open a new terminal, then run: biexce basic --help\n'
 else
     printf '\nINSTALL FAILED\n'
 fi

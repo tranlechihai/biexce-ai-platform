@@ -37,6 +37,14 @@ function Get-BiexceCliCopyPairs {
         [pscustomobject]@{
             Source = Join-Path $RepositoryRoot 'src\biexce_control'
             Destination = 'biexce-cli\src\biexce_control'
+        },
+        [pscustomobject]@{
+            Source = Join-Path $RepositoryRoot 'src\global\basic'
+            Destination = 'biexce-cli\src\global\basic'
+        },
+        [pscustomobject]@{
+            Source = Join-Path $RepositoryRoot 'src\global\skills'
+            Destination = 'biexce-cli\src\global\skills'
         }
     )) {
         $base = [IO.Path]::GetFullPath($definition.Source).TrimEnd(
@@ -46,7 +54,8 @@ function Get-BiexceCliCopyPairs {
             Get-ChildItem -LiteralPath $base -Recurse -File |
                 Where-Object {
                     $_.Extension -ne '.pyc' -and
-                    $_.FullName -notmatch '[\\/]__pycache__[\\/]'
+                    $_.FullName -notmatch '[\\/]__pycache__[\\/]' -and
+                    $_.FullName -notmatch '[\\/]_TEMPLATE[\\/]'
                 } |
                 Sort-Object FullName
         )) {
@@ -817,4 +826,4 @@ catch {
     throw $installError
 }
 
-Write-Host "Global Biexce OpenCode agent harness installed: $targetRoot"
+Write-Host "BIEXCE CLI and compatibility files installed: $targetRoot"

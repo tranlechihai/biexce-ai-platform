@@ -447,13 +447,24 @@ def cli_bundle_sources(root, platform_name):
             root / "src" / "global" / "opencode.json",
         ),
     ]
-    base = root / "src" / "biexce_control"
-    destination_base = "biexce-cli/src/biexce_control"
-    for source in sorted(base.rglob("*")):
-        if not source.is_file() or source.suffix == ".pyc" or "__pycache__" in source.parts:
-            continue
-        relative = source.relative_to(base).as_posix()
-        pairs.append((f"{destination_base}/{relative}", source))
+    trees = (
+        (root / "src" / "biexce_control", "biexce-cli/src/biexce_control"),
+        (root / "src" / "global" / "basic", "biexce-cli/src/global/basic"),
+        (root / "src" / "global" / "skills", "biexce-cli/src/global/skills"),
+    )
+    for base, destination_base in trees:
+        for source in sorted(base.rglob("*")):
+            relative = source.relative_to(base)
+            if (
+                not source.is_file()
+                or source.suffix == ".pyc"
+                or "__pycache__" in source.parts
+                or "_TEMPLATE" in relative.parts
+            ):
+                continue
+            pairs.append(
+                (f"{destination_base}/{relative.as_posix()}", source)
+            )
     shim_source = root / "bin" / platform_name / "biexce-global"
     pairs.append(("biexce-bin/biexce", shim_source))
     for relative, source in pairs:
@@ -992,7 +1003,7 @@ def install(root, target, platform_name="linux"):
                 )
         raise
 
-    print(f"Global Biexce OpenCode agent harness installed: {target}")
+    print(f"BIEXCE CLI and compatibility files installed: {target}")
 
 
 def main():

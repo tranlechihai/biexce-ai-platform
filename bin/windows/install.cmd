@@ -39,7 +39,7 @@ if not "%INSTALL_EXIT%"=="0" goto :failure
 
 echo.
 echo INSTALL PASS
-echo Open a new terminal, then run: biexce auto on
+echo Open a new terminal, then run: biexce basic --help
 goto :finish
 
 :failure

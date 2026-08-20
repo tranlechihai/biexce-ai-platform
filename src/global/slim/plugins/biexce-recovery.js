@@ -2,6 +2,9 @@ import { recoverInterruptedParent } from "../runtime/recovery-core.js"
 
 
 const SERVICE = "biexce-recovery"
+const EVENT_DELAY = 1500
+const START_DELAY = 1500
+const RETRY_DELAY = 3000
 
 
 async function writeLog(client, level, message, extra = {}) {
@@ -16,33 +19,63 @@ async function writeLog(client, level, message, extra = {}) {
 
 
 export const BiexceRecoveryPlugin = async ({ client, directory }) => {
-  let attempts = 0
-  let completed = false
+  const seen = new Set()
+  let failures = 0
   let running = false
+  let queued = false
+  let timer
+
+  const schedule = (delay = EVENT_DELAY) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = undefined
+      void run()
+    }, delay)
+  }
 
   const run = async () => {
-    if (completed || running) return
+    if (running) {
+      queued = true
+      return
+    }
     running = true
-    attempts += 1
     try {
-      const result = await recoverInterruptedParent(client, directory)
-      completed = result.status !== "unsupported"
-      await writeLog(client, "info", "Restart recovery checked", result)
+      const result = await recoverInterruptedParent(
+        client,
+        directory,
+        { seen },
+      )
+      failures = 0
+      await writeLog(client, "info", "Recovery sweep checked", result)
     } catch (error) {
-      await writeLog(client, "warn", "Restart recovery failed", {
-        attempt: attempts,
+      failures += 1
+      await writeLog(client, "warn", "Recovery sweep failed", {
+        attempt: failures,
         error: error instanceof Error ? error.message : String(error),
       })
+      if (failures < 2) schedule(RETRY_DELAY)
     } finally {
       running = false
-      if (!completed && attempts < 2) setTimeout(run, 3000)
+      if (queued) {
+        queued = false
+        schedule(250)
+      }
     }
   }
 
-  setTimeout(run, 1500)
+  schedule(START_DELAY)
   return {
     event: async ({ event }) => {
-      if (event.type === "server.connected") setTimeout(run, 250)
+      if (event.type === "server.connected") schedule(250)
+      if (event.type === "session.idle") schedule()
+      if (event.type === "session.error") schedule()
+      if (event.type === "todo.updated") schedule()
+      if (
+        event.type === "session.status" &&
+        event.properties?.status?.type === "idle"
+      ) {
+        schedule()
+      }
     },
   }
 }
