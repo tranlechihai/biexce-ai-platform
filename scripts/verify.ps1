@@ -124,7 +124,9 @@ function Assert-BiexceLocalProviderContract {
         [Parameter(Mandatory = $true)]
         [string]$Label,
 
-        [bool]$RequireOnlyProvider = $false
+        [bool]$RequireOnlyProvider = $false,
+
+        [bool]$AllowUserExtensions = $false
     )
 
     $providers = Get-BiexcePropertyValue -Object $Config -Name "provider"
@@ -145,10 +147,19 @@ function Assert-BiexceLocalProviderContract {
     Assert-Biexce (
         $provider -is [pscustomobject]
     ) "$Label contains provider $expectedProviderId"
-    Assert-BiexcePropertyNames `
-        -Object $provider `
-        -Expected @("npm", "name", "options", "models") `
-        -Label "$Label $expectedProviderId"
+    if ($AllowUserExtensions) {
+        foreach ($required in @("npm", "name", "options", "models")) {
+            Assert-Biexce (
+                $null -ne $provider.PSObject.Properties[$required]
+            ) "$Label $expectedProviderId contains $required"
+        }
+    }
+    else {
+        Assert-BiexcePropertyNames `
+            -Object $provider `
+            -Expected @("npm", "name", "options", "models") `
+            -Label "$Label $expectedProviderId"
+    }
     Assert-Biexce (
         $provider.npm -eq $expectedProviderPackage
     ) "$Label local provider package is exact"
@@ -159,10 +170,12 @@ function Assert-BiexceLocalProviderContract {
     Assert-Biexce (
         $provider.options -is [pscustomobject]
     ) "$Label local provider options are an object"
-    Assert-BiexcePropertyNames `
-        -Object $provider.options `
-        -Expected @("baseURL") `
-        -Label "$Label local provider options"
+    if (-not $AllowUserExtensions) {
+        Assert-BiexcePropertyNames `
+            -Object $provider.options `
+            -Expected @("baseURL") `
+            -Label "$Label local provider options"
+    }
     Assert-Biexce (
         $provider.options.baseURL -eq $expectedProviderBaseUrl
     ) "$Label local provider base URL is exact"
@@ -170,10 +183,12 @@ function Assert-BiexceLocalProviderContract {
     Assert-Biexce (
         $provider.models -is [pscustomobject]
     ) "$Label local provider models are an object"
-    Assert-BiexcePropertyNames `
-        -Object $provider.models `
-        -Expected @($expectedModelId) `
-        -Label "$Label local provider model map"
+    if (-not $AllowUserExtensions) {
+        Assert-BiexcePropertyNames `
+            -Object $provider.models `
+            -Expected @($expectedModelId) `
+            -Label "$Label local provider model map"
+    }
 
     $model = Get-BiexcePropertyValue `
         -Object $provider.models `
@@ -206,17 +221,19 @@ function Assert-BiexceLocalProviderContract {
         $model.limit.output -le $model.limit.context
     ) "$Label local model output limit does not exceed context"
 
-    Assert-Biexce (
-        $null -eq $provider.options.PSObject.Properties["apiKey"] -and
-        $null -eq $provider.options.PSObject.Properties["headers"]
-    ) "$Label local provider has no API key or Authorization header"
-    Assert-Biexce (
-        $null -eq $provider.PSObject.Properties["variant"] -and
-        $null -eq $provider.PSObject.Properties["variants"] -and
-        $null -eq $model.PSObject.Properties["variant"] -and
-        $null -eq $model.PSObject.Properties["variants"] -and
-        $null -eq $model.PSObject.Properties["options"]
-    ) "$Label local provider has no variant or effort config"
+    if (-not $AllowUserExtensions) {
+        Assert-Biexce (
+            $null -eq $provider.options.PSObject.Properties["apiKey"] -and
+            $null -eq $provider.options.PSObject.Properties["headers"]
+        ) "$Label local provider has no API key or Authorization header"
+        Assert-Biexce (
+            $null -eq $provider.PSObject.Properties["variant"] -and
+            $null -eq $provider.PSObject.Properties["variants"] -and
+            $null -eq $model.PSObject.Properties["variant"] -and
+            $null -eq $model.PSObject.Properties["variants"] -and
+            $null -eq $model.PSObject.Properties["options"]
+        ) "$Label local provider has no variant or effort config"
+    }
 }
 
 function Get-BiexceAgentFrontmatter {
@@ -629,7 +646,8 @@ if ($TargetPath) {
 
     Assert-BiexceLocalProviderContract `
         -Config $installedConfig `
-        -Label "Installed"
+        -Label "Installed" `
+        -AllowUserExtensions $true
 
     foreach ($builtin in @("build", "plan", "general", "explore", "scout")) {
         $definition = Get-BiexcePropertyValue `

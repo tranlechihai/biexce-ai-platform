@@ -124,6 +124,15 @@ def exact_keys(value, expected, label):
         raise RuntimeError(f"{label} has unexpected properties.")
 
 
+def require_keys(value, expected, label):
+    if not isinstance(value, dict):
+        raise RuntimeError(f"{label} must be a JSON object.")
+    missing = set(expected) - set(value)
+    if missing:
+        names = ", ".join(sorted(missing))
+        raise RuntimeError(f"{label} is missing required properties: {names}.")
+
+
 def validate_local_provider(config, canonical_only=False):
     providers = config.get("provider")
     if not isinstance(providers, dict):
@@ -135,20 +144,21 @@ def validate_local_provider(config, canonical_only=False):
     if matching_ids != [PROVIDER_ID]:
         raise RuntimeError("Provider biexce-local is missing, duplicated, or mis-cased.")
 
+    validate_keys = exact_keys if canonical_only else require_keys
     provider = providers[PROVIDER_ID]
-    exact_keys(provider, ("npm", "name", "options", "models"), PROVIDER_ID)
+    validate_keys(provider, ("npm", "name", "options", "models"), PROVIDER_ID)
     if provider["npm"] != PROVIDER_PACKAGE:
         raise RuntimeError("Biexce provider package is incorrect.")
     if provider["name"] != PROVIDER_NAME:
         raise RuntimeError("Biexce provider display name is incorrect.")
 
     options = provider["options"]
-    exact_keys(options, ("baseURL",), "Biexce provider options")
+    validate_keys(options, ("baseURL",), "Biexce provider options")
     if options["baseURL"] != PROVIDER_BASE_URL:
         raise RuntimeError("Biexce provider base URL is incorrect.")
 
     models = provider["models"]
-    exact_keys(models, (MODEL_ID,), "Biexce provider model map")
+    validate_keys(models, (MODEL_ID,), "Biexce provider model map")
     model = models[MODEL_ID]
     exact_keys(model, ("name", "limit"), "Biexce local model")
     if model["name"] != MODEL_NAME:
@@ -238,7 +248,42 @@ def merge_providers(existing, managed):
     for name, value in managed.items():
         if not isinstance(value, dict):
             raise RuntimeError(f"Managed provider {name} must be a JSON object.")
-        merged[name] = copy.deepcopy(value)
+        matching = [
+            definition
+            for existing_name, definition in existing.items()
+            if existing_name.lower() == name.lower()
+        ]
+        if len(matching) > 1:
+            raise RuntimeError(f"Existing provider {name} is duplicated or mis-cased.")
+        previous = matching[0] if matching else {}
+        if not isinstance(previous, dict):
+            raise RuntimeError(f"Existing provider {name} must be a JSON object.")
+
+        definition = copy.deepcopy(previous)
+        definition.update(
+            copy.deepcopy(
+                {
+                    key: item
+                    for key, item in value.items()
+                    if key not in ("options", "models")
+                }
+            )
+        )
+        for section in ("options", "models"):
+            previous_section = previous.get(section, {})
+            managed_section = value.get(section, {})
+            if not isinstance(previous_section, dict):
+                raise RuntimeError(
+                    f"Existing provider {name}.{section} must be a JSON object."
+                )
+            if not isinstance(managed_section, dict):
+                raise RuntimeError(
+                    f"Managed provider {name}.{section} must be a JSON object."
+                )
+            combined = copy.deepcopy(previous_section)
+            combined.update(copy.deepcopy(managed_section))
+            definition[section] = combined
+        merged[name] = definition
     return merged
 
 
