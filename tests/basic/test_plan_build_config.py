@@ -14,6 +14,7 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from biexce_control.basic_config import BasicConfigError, build_config, inspect_config
+from biexce_control.basic_config.launchers import POSIX, WINDOWS
 
 
 PLAN_MODEL = "openai/gpt-5.6-sol"
@@ -99,6 +100,14 @@ class PlanBuildConfigTest(unittest.TestCase):
             self.assertTrue((output / "prompts" / "build.md").is_file())
             self.assertTrue((output / "bin" / "biexce-opencode").is_file())
             self.assertTrue((output / "bin" / "biexce-opencode.cmd").is_file())
+
+    def test_launchers_isolate_global_config_and_ignore_nested_launcher(self):
+        for launcher in (POSIX, WINDOWS):
+            self.assertIn("XDG_CONFIG_HOME", launcher)
+            self.assertIn("BIEXCE_SLIM_CONFIG_DIR", launcher)
+            self.assertIn("OPENCODE_CONFIG", launcher)
+        self.assertIn('case "${OPENCODE_BINARY##*/}"', POSIX)
+        self.assertIn("OPENCODE_BINARY_NAME", WINDOWS)
 
     def test_rejects_invalid_or_missing_catalog_model(self):
         with temporary_directory() as root:

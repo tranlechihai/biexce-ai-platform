@@ -82,11 +82,62 @@ def inspect_config(config_dir: str | Path) -> dict[str, object]:
     }
 
 
-def _resolve_binary(explicit: str | None) -> str | None:
-    if explicit:
-        return explicit
-    configured = os.environ.get("OPENCODE_BINARY")
-    return configured or shutil.which("opencode")
+def _launcher_command(root: Path, *arguments: str) -> list[str]:
+    if os.name == "nt":
+        launcher = root / "bin" / "biexce-opencode.cmd"
+        return [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", str(launcher), *arguments]
+    return [str(root / "bin" / "biexce-opencode"), *arguments]
+
+
+def _run_launcher(
+    root: Path,
+    *arguments: str,
+    opencode_binary: str | None,
+) -> subprocess.CompletedProcess[str]:
+    environment = os.environ.copy()
+    if opencode_binary:
+        environment["OPENCODE_BINARY"] = opencode_binary
+    return subprocess.run(
+        _launcher_command(root, *arguments),
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=20,
+        env=environment,
+    )
+
+
+def _registry_check(root: Path, binary: str | None) -> dict[str, object]:
+    completed = _run_launcher(
+        root,
+        "debug",
+        "config",
+        opencode_binary=binary,
+    )
+    effective = json.loads(completed.stdout)
+    agents = effective.get("agent", {})
+    expected = _read_json(root / "biexce-basic.json").get("models", {})
+    active = all(
+        isinstance(agents.get(name), dict)
+        and agents[name].get("disable") is not True
+        and agents[name].get("model") == expected.get(name)
+        for name in ("plan", "build")
+    )
+    forbidden = ("bx-director", "bx-plan", "orchestrator")
+    legacy = any(
+        isinstance(agents.get(name), dict)
+        and agents[name].get("disable") is not True
+        for name in forbidden
+    )
+    plugins = " ".join(str(item) for item in effective.get("plugin", []))
+    isolated = not legacy and "biexce-control" not in plugins and "oh-my" not in plugins
+    return _check(
+        "agent_registry",
+        active and isolated,
+        "active Plan/Build registry without legacy runtime"
+        if active and isolated
+        else "Plan/Build disabled or legacy runtime leaked into effective config",
+    )
 
 
 def run_doctor(
@@ -96,23 +147,26 @@ def run_doctor(
     result = inspect_config(config_dir)
     if not result["ok"]:
         return result
-    binary = _resolve_binary(opencode_binary)
+    root = Path(config_dir).expanduser().resolve()
+    binary = opencode_binary
     runtime_checks: list[dict[str, object]] = []
-    if binary is None:
+    configured = binary or os.environ.get("OPENCODE_BINARY") or shutil.which("opencode")
+    if configured is None:
         runtime_checks.append(_check("opencode", False, "OpenCode CLI not found"))
     else:
         try:
-            completed = subprocess.run(
-                [binary, "--version"],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=20,
+            completed = _run_launcher(
+                root,
+                "--version",
+                opencode_binary=binary,
             )
             version = (completed.stdout or completed.stderr).strip()
             runtime_checks.append(_check("opencode", True, version))
+            runtime_checks.append(_registry_check(root, binary))
         except (OSError, subprocess.SubprocessError) as error:
             runtime_checks.append(_check("opencode", False, str(error)))
+        except (BasicConfigError, json.JSONDecodeError) as error:
+            runtime_checks.append(_check("agent_registry", False, str(error)))
     result["runtime_checks"] = runtime_checks
     result["ready_to_run"] = all(bool(item["ok"]) for item in runtime_checks)
     return result
